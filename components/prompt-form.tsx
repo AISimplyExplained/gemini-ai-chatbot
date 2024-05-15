@@ -17,6 +17,7 @@ import {
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
+export const maxDuration = 60;
 
 export function PromptForm({
   input,
