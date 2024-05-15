@@ -38,14 +38,14 @@ export function ChatPanel({
 
   const exampleMessages = [
     {
-      heading: 'Tell me about Diamond',
-      subheading: 'What services do they offer?',
-      message: `What services does the diamond marketing group offer?`
+      heading: 'Brainstorm a concept',
+      subheading: '',
+      message: ``
     },
     {
-      heading: 'Previous Work',
-      subheading: 'Show me some previous clients',
-      message: 'Tell me about the previous clients of the diamond marketing group'
+      heading: 'Analyse a dataset',
+      subheading: '',
+      message: ''
     }
   ]
 
@@ -66,34 +66,7 @@ export function ChatPanel({
                   'cursor-pointer bg-zinc-50 text-zinc-950 rounded-2xl p-4 sm:p-6 hover:bg-zinc-100 transition-colors',
                   index > 1 && 'hidden md:block'
                 )}
-                onClick={async () => {
-                  setMessages(currentMessages => [
-                    ...currentMessages,
-                    {
-                      id: nanoid(),
-                      display: <UserMessage>{example.message}</UserMessage>
-                    }
-                  ])
 
-                  try {
-                    const responseMessage = await submitUserMessage(
-                      example.message
-                    )
-
-                    setMessages(currentMessages => [
-                      ...currentMessages,
-                      responseMessage
-                    ])
-                  } catch {
-                    toast(
-                      <div className="text-red-600">
-                        You have reached your message limit! Please try again
-                        later
-                        .
-                      </div>
-                    )
-                  }
-                }}
               >
                 <div className="font-medium">{example.heading}</div>
                 <div className="text-sm text-zinc-800">
