@@ -29,7 +29,7 @@ async function UserOrLogin() {
           <SidebarToggle />
         </>
       ) : (
-        <Link href="/new" rel="nofollow">
+        <Link href="https://ai-image-wheat.vercel.app/" rel="nofollow">
           <img className="size-6 object-contain" src="/images/gemini.png" alt="gemini logo" />
         </Link>
       )}
