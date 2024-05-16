@@ -1,5 +1,5 @@
 'use client'
-
+import { useModel } from '@/app/context/ModelContext'
 import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 
@@ -29,7 +29,7 @@ export function PromptForm({
     const inputRef = React.useRef<HTMLTextAreaElement>(null)
     const { submitUserMessage, describeImage } = useActions()
     const [_, setMessages] = useUIState<typeof AI>()
-
+    const { model } = useModel();
     React.useEffect(() => {
         if (inputRef.current) {
             inputRef.current.focus()
@@ -64,7 +64,7 @@ export function PromptForm({
 
                 try {
                     // Submit and get response message
-                    const responseMessage = await submitUserMessage(value)
+                    const responseMessage = await submitUserMessage(value, model)
                     setMessages(currentMessages => [...currentMessages, responseMessage])
                 } catch {
                     toast(

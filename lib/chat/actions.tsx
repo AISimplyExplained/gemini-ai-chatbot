@@ -106,7 +106,8 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
   }
 }
 
-async function submitUserMessage(content: string) {
+async function submitUserMessage(content: string, model: string) {
+
   'use server'
 
   const aiState = getMutableAIState<typeof AI>()

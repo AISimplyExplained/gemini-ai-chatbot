@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import * as React from 'react'
 import Link from 'next/link'
-
+import {ModelSelector} from "@/components/model-selector";
 import { cn } from '@/lib/utils'
 import { auth } from '@/auth'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -38,9 +38,7 @@ async function UserOrLogin() {
         {session?.user ? (
           <UserMenu user={session.user} />
         ) : (
-          <Button variant="link" asChild className="-ml-2">
-            <Link href="#">Login</Link>
-          </Button>
+            <ModelSelector/>
         )}
       </div>
     </>
