@@ -2,18 +2,12 @@
 import { useModel } from '@/app/context/ModelContext'
 import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
-
 import { useActions, useUIState } from 'ai/rsc'
-
 import { UserMessage } from './stocks/message'
 import { type AI } from '@/lib/chat/actions'
 import { Button } from '@/components/ui/button'
-import { IconArrowElbow, IconPlus } from '@/components/ui/icons'
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger
-} from '@/components/ui/tooltip'
+import { IconArrowElbow } from '@/components/ui/icons'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
@@ -29,14 +23,14 @@ export function PromptForm({
     const inputRef = React.useRef<HTMLTextAreaElement>(null)
     const { submitUserMessage, describeImage } = useActions()
     const [_, setMessages] = useUIState<typeof AI>()
-    const { model } = useModel();
+    const { model } = useModel()
     React.useEffect(() => {
         if (inputRef.current) {
             inputRef.current.focus()
         }
     }, [])
 
-    const fileRef = React.useRef<HTMLInputElement>(null)
+    // const fileRef = React.useRef<HTMLInputElement>(null)
 
     return (
         <form
@@ -84,7 +78,7 @@ export function PromptForm({
                 }
             }}
         >
-            <input
+            {/* <input
                 type="file"
                 className="hidden"
                 id="file"
@@ -117,24 +111,24 @@ export function PromptForm({
                         }
                     }
                 }}
-            />
+            /> */}
             <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-zinc-100 px-12 sm:rounded-full sm:px-12">
                 {/* <Tooltip>
-          <TooltipTrigger asChild> */}
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute left-4 top-[14px] size-8 rounded-full bg-background p-0 sm:left-4"
-                    onClick={() => {
-                        fileRef.current?.click()
-                    }}
-                >
-                    <IconPlus />
-                    <span className="sr-only">New Chat</span>
-                </Button>
-                {/* </TooltipTrigger>
-          <TooltipContent>Add Attachments</TooltipContent>
-        </Tooltip> */}
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute left-4 top-[14px] size-8 rounded-full bg-background p-0 sm:left-4"
+                            onClick={() => {
+                                fileRef.current?.click()
+                            }}
+                        >
+                            <IconPlus />
+                            <span className="sr-only">New Chat</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Add Attachments</TooltipContent>
+                </Tooltip> */}
                 <Textarea
                     ref={inputRef}
                     tabIndex={0}
@@ -168,9 +162,9 @@ export function PromptForm({
                 </div>
             </div>
 
-                <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center">
-                    Models may make mistakes, always validate your work
-                </p>
+            <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center">
+                Models may make mistakes, always validate your work
+            </p>
         </form>
     )
 }
