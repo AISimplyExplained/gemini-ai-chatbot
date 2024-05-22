@@ -115,12 +115,15 @@ async function submitUserMessage(content: string, model: string) {
     baseURL: 'https://api.groq.com/openai/v1',
     apiKey: process.env.GROQ_API_KEY,
   });
+  const gemini = createOpenAI({
+    baseURL: 'https://my-openai-gemini-omega-three.vercel.app/v1',
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  });
   // Determine the API and base URL based on the model name
   const isGroqModel = model.startsWith("llama3-70b-8192");
-  const api = isGroqModel ? createOpenAI({
-    baseURL: 'https://api.groq.com/openai/v1',
-    apiKey: process.env.GROQ_API_KEY,
-  }) : openai;
+  // Determine the API based on the model name
+  const isGeminiModel = model === "gemini";
+  const api = isGroqModel ? groq : isGeminiModel ? gemini : openai;
   const aiState = getMutableAIState<typeof AI>()
 
   aiState.update({

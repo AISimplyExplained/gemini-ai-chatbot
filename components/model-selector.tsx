@@ -27,7 +27,7 @@ export function ModelSelector() {
                 <SelectGroup>
                     <SelectLabel>Model</SelectLabel>
                     <SelectItem value="gpt-3.5-turbo">GPT 3.5</SelectItem>
-
+                    <SelectItem value="gemini">Gemini</SelectItem>
                     <SelectItem value="gpt-4">GPT-4</SelectItem>
                     <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
                     <SelectItem value="gpt-4o-2024-05-13">GPT-4o</SelectItem>
