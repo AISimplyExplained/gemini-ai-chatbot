@@ -34,27 +34,36 @@ export function PromptForm({
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files) {
-            toast.error('No file selected')
-            return
+            toast.error('No file selected');
+            return;
         }
 
-        const files = Array.from(event.target.files)
-        const imageFiles = files.filter(file => file.type.startsWith('image/'))
+        const files = Array.from(event.target.files);
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
         if (imageFiles.length > 0) {
             imageFiles.forEach(file => {
-                const reader = new FileReader()
-                reader.readAsDataURL(file)
+                const reader = new FileReader();
+
+                reader.onerror = () => {
+                    toast.error('Failed to read file');
+                };
 
                 reader.onloadend = () => {
-                    const base64String = reader.result as string
-                    setUploadedImages(prevImages => [...prevImages, base64String])
-                }
-            })
+                    const base64String = reader.result as string;
+                    if (!base64String) {
+                        toast.error('Failed to encode file');
+                        return;
+                    }
+                    setUploadedImages(prevImages => [...prevImages, base64String]);
+                };
+
+                reader.readAsDataURL(file);
+            });
         } else {
-            toast.error('Only image files are allowed')
+            toast.error('Only image files are allowed');
         }
-    }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
