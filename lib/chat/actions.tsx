@@ -1,4 +1,3 @@
-// @ts-nocheck
 import 'server-only'
 
 import {
@@ -35,7 +34,7 @@ import {
 } from '@/lib/utils'
 import { saveChat } from '@/app/actions'
 import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
-import { Chat} from '@/lib/types'
+import { Chat } from '@/lib/types'
 import { auth } from '@/auth'
 
 async function confirmPurchase(symbol: string, price: number, amount: number) {
@@ -107,6 +106,7 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
         }
     }
 }
+
 type TextPart = {
     type: 'text';
     text: string;
@@ -140,7 +140,6 @@ type SystemMessage = {
 type Message = UserMessage | AssistantMessage | SystemMessage;
 
 async function submitUserMessage(content: string, model: string, images?: string[]) {
-
     'use server'
 
     const groq = createOpenAI({
@@ -151,14 +150,11 @@ async function submitUserMessage(content: string, model: string, images?: string
         baseURL: 'https://my-openai-gemini-omega-three.vercel.app/v1',
         apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     });
-    // Determine the API and base URL based on the model name
     const isGroqModel = model.startsWith("llama3-70b-8192");
-    // Determine the API based on the model name
     const isGeminiModel = model === "gemini";
     const api = isGroqModel ? groq : isGeminiModel ? gemini : openai;
     const aiState = getMutableAIState<typeof AI>()
 
-    // Prepare the message content
     const messageContent: MessageContent[] = [];
 
     if (content) {
@@ -166,21 +162,23 @@ async function submitUserMessage(content: string, model: string, images?: string
     }
     if (images && images.length > 0) {
         images.forEach(image => {
-            // Remove the base64 header if present
             const base64Image = image.split(',')[1];
             messageContent.push({ type: 'image', image: base64Image });
         });
     }
 
+    const userMessage: UserMessage = {
+        id: nanoid(),
+        role: 'user',
+        content: messageContent
+    };
+
     aiState.update({
         ...aiState.get(),
         messages: [
             ...aiState.get().messages,
-            {
-                id: nanoid(),
-                role: 'user',
-                content: messageContent
-            }
+            // @ts-ignore
+            userMessage
         ]
     })
 
@@ -210,6 +208,7 @@ async function submitUserMessage(content: string, model: string, images?: string
                     ...aiState.get(),
                     messages: [
                         ...aiState.get().messages,
+                        // @ts-ignore
                         {
                             id: nanoid(),
                             role: 'assistant',
@@ -302,34 +301,34 @@ export const getUIStateFromAIState = (aiState: Chat) => {
             id: `${aiState.chatId}-${index}`,
             display:
                 message.role === 'tool' ? (
-                    message.content.map(tool => {
+                    message.content.map((tool: any) => {
                         return tool.toolName === 'listStocks' ? (
                             <BotCard>
-                                {/* TODO: Infer types based on the tool result*/}
-                                {/* @ts-expect-error */}
                                 <Stocks props={tool.result} />
                             </BotCard>
                         ) : tool.toolName === 'showStockPrice' ? (
                             <BotCard>
-                                {/* @ts-expect-error */}
                                 <Stock props={tool.result} />
                             </BotCard>
                         ) : tool.toolName === 'showStockPurchase' ? (
                             <BotCard>
-                                {/* @ts-expect-error */}
                                 <Purchase props={tool.result} />
                             </BotCard>
                         ) : tool.toolName === 'getEvents' ? (
                             <BotCard>
-                                {/* @ts-expect-error */}
                                 <Events props={tool.result} />
                             </BotCard>
                         ) : null
                     })
                 ) : message.role === 'user' ? (
-                    <UserMessage>{message.content as string}</UserMessage>
-                ) : message.role === 'assistant' &&
-                typeof message.content === 'string' ? (
+                    <UserMessage>{message.content.map((part: MessageContent) =>
+                        part.type === 'text' ? (
+                            <p>{part.text}</p>
+                        ) : (
+                            <img src={`data:image/png;base64,${part.image}`} alt="User uploaded content" />
+                        )
+                    )}</UserMessage>
+                ) : message.role === 'assistant' && typeof message.content === 'string' ? (
                     <BotMessage content={message.content} />
                 ) : null
         }))
