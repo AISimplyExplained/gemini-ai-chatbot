@@ -106,6 +106,37 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
         }
     }
 }
+type TextPart = {
+    type: 'text';
+    text: string;
+};
+
+type ImagePart = {
+    type: 'image';
+    image: string;
+};
+
+type MessageContent = TextPart | ImagePart;
+
+type UserMessage = {
+    id: string;
+    role: 'user';
+    content: MessageContent[];
+};
+
+type AssistantMessage = {
+    id: string;
+    role: 'assistant';
+    content: string;
+};
+
+type SystemMessage = {
+    id: string;
+    role: 'system';
+    content: string;
+};
+
+type Message = UserMessage | AssistantMessage | SystemMessage;
 
 async function submitUserMessage(content: string, model: string, images?: string[]) {
 
@@ -127,7 +158,7 @@ async function submitUserMessage(content: string, model: string, images?: string
     const aiState = getMutableAIState<typeof AI>()
 
     // Prepare the message content
-    const messageContent: Array<{type: string, text?: string, image?: string}> = [];
+    const messageContent: MessageContent[] = [];
 
     if (content) {
         messageContent.push({ type: 'text', text: content });
