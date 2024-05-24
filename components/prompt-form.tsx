@@ -10,10 +10,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import { nanoid } from 'nanoid';
 import { toast } from 'sonner';
+import imageCompression from 'browser-image-compression';
 
 export function PromptForm({
                                input,
-                               setInput,
+                               setInput
                            }: {
     input: string;
     setInput: (value: string) => void;
@@ -43,32 +44,49 @@ export function PromptForm({
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
         if (imageFiles.length > 0) {
-            const base64Images = await Promise.all(
-                imageFiles.map(file => readAsBase64(file))
-            );
+            for (const file of imageFiles) {
+                try {
+                    // Compress the image before encoding it
+                    const compressedFile = await compressImage(file);
 
-            setUploadedImages(prevImages => [
-                ...prevImages,
-                ...base64Images.filter(base64String => !!base64String)
-            ]);
+                    const reader = new FileReader();
+                    reader.onerror = () => {
+                        toast.error('Failed to read file');
+                    };
+
+                    reader.onloadend = () => {
+                        const base64String = reader.result as string;
+                        if (!base64String) {
+                            toast.error('Failed to encode file');
+                            return;
+                        }
+                        setUploadedImages(prevImages => [...prevImages, base64String]);
+                    };
+
+                    reader.readAsDataURL(compressedFile);
+                } catch (error) {
+                    toast.error('Failed to compress file');
+                }
+            }
         } else {
             toast.error('Only image files are allowed');
         }
     };
 
-    const readAsBase64 = (file: File): Promise<string | null> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const base64String = reader.result as string;
-                resolve(base64String);
-            };
-            reader.onerror = () => {
-                toast.error(`Failed to read file: ${file.name}`);
-                resolve(null); // resolve with null on error to continue processing other files
-            };
-            reader.readAsDataURL(file);
-        });
+    const compressImage = async (file: File) => {
+        const options = {
+            maxSizeMB: 0.5, // Compress to a smaller size if necessary
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+        };
+
+        try {
+            const compressedFile = await imageCompression(file, options);
+            return compressedFile;
+        } catch (error) {
+            console.error('Error compressing the image:', error);
+            throw error;
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -100,9 +118,20 @@ export function PromptForm({
         ]);
 
         try {
+            // Create the payload with the compressed and encoded images
+            const payload = {
+                message: value,
+                model: model,
+                images: uploadedImages
+            };
+
+            // Log the JSON payload
+            console.log('Sending JSON payload:', JSON.stringify(payload));
+
             const responseMessage = await submitUserMessage(value, model, uploadedImages);
             setMessages(currentMessages => [...currentMessages, responseMessage]);
-        } catch {
+        } catch (error) {
+            console.error('Error submitting message:', error);
             toast(
                 <div className="text-red-600">
                     You have reached your message limit! Please try again later, or{' '}
@@ -125,7 +154,10 @@ export function PromptForm({
     const canUploadAttachments = ['gpt-4', 'gpt-4-turbo', 'gpt-4o-2024-05-13'].includes(model);
 
     return (
-        <form ref={formRef} onSubmit={handleSubmit}>
+        <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+        >
             <input
                 type="file"
                 className="hidden"
