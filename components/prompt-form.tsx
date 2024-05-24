@@ -1,36 +1,37 @@
-import { useModel } from '@/app/context/ModelContext'
-import * as React from 'react'
-import Textarea from 'react-textarea-autosize'
-import { useActions, useUIState } from 'ai/rsc'
-import { UserMessage } from './stocks/message'
-import { type AI } from '@/lib/chat/actions'
-import { Button } from '@/components/ui/button'
-import { IconArrowElbow, IconPlus, IconTrash } from '@/components/ui/icons'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
-import { nanoid } from 'nanoid'
-import { toast } from 'sonner'
+import { useModel } from '@/app/context/ModelContext';
+import * as React from 'react';
+import Textarea from 'react-textarea-autosize';
+import { useActions, useUIState } from 'ai/rsc';
+import { UserMessage } from './stocks/message';
+import { type AI } from '@/lib/chat/actions';
+import { Button } from '@/components/ui/button';
+import { IconArrowElbow, IconPlus, IconTrash } from '@/components/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import { nanoid } from 'nanoid';
+import { toast } from 'sonner';
 
 export function PromptForm({
                                input,
-                               setInput
+                               setInput,
                            }: {
-    input: string
-    setInput: (value: string) => void
+    input: string;
+    setInput: (value: string) => void;
 }) {
-    const { formRef, onKeyDown } = useEnterSubmit()
-    const inputRef = React.useRef<HTMLTextAreaElement>(null)
-    const { submitUserMessage } = useActions()
-    const [messages, setMessages] = useUIState<typeof AI>()
-    const [uploadedImages, setUploadedImages] = React.useState<string[]>([])
-    const { model } = useModel()
+    const { formRef, onKeyDown } = useEnterSubmit();
+    const inputRef = React.useRef<HTMLTextAreaElement>(null);
+    const { submitUserMessage } = useActions();
+    const [messages, setMessages] = useUIState<typeof AI>();
+    const [uploadedImages, setUploadedImages] = React.useState<string[]>([]);
+    const { model } = useModel();
+
     React.useEffect(() => {
         if (inputRef.current) {
-            inputRef.current.focus()
+            inputRef.current.focus();
         }
-    }, [])
+    }, []);
 
-    const fileRef = React.useRef<HTMLInputElement>(null)
+    const fileRef = React.useRef<HTMLInputElement>(null);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files) {
@@ -42,39 +43,44 @@ export function PromptForm({
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
         if (imageFiles.length > 0) {
-            imageFiles.forEach(file => {
-                const reader = new FileReader();
+            const base64Images = await Promise.all(
+                imageFiles.map(file => readAsBase64(file))
+            );
 
-                reader.onerror = () => {
-                    toast.error('Failed to read file');
-                };
-
-                reader.onloadend = () => {
-                    const base64String = reader.result as string;
-                    if (!base64String) {
-                        toast.error('Failed to encode file');
-                        return;
-                    }
-                    setUploadedImages(prevImages => [...prevImages, base64String]);
-                };
-
-                reader.readAsDataURL(file);
-            });
+            setUploadedImages(prevImages => [
+                ...prevImages,
+                ...base64Images.filter(base64String => !!base64String)
+            ]);
         } else {
             toast.error('Only image files are allowed');
         }
     };
 
+    const readAsBase64 = (file: File): Promise<string | null> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64String = reader.result as string;
+                resolve(base64String);
+            };
+            reader.onerror = () => {
+                toast.error(`Failed to read file: ${file.name}`);
+                resolve(null); // resolve with null on error to continue processing other files
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
+        e.preventDefault();
 
         if (window.innerWidth < 600) {
-            e.currentTarget['message']?.blur()
+            e.currentTarget['message']?.blur();
         }
 
-        const value = input.trim()
-        setInput('')
-        if (!value && uploadedImages.length === 0) return
+        const value = input.trim();
+        setInput('');
+        if (!value && uploadedImages.length === 0) return;
 
         const combinedContent = (
             <div>
@@ -83,7 +89,7 @@ export function PromptForm({
                     <img key={index} src={image} alt="Uploaded" className="max-w-full h-auto" />
                 ))}
             </div>
-        )
+        );
 
         setMessages(currentMessages => [
             ...currentMessages,
@@ -91,11 +97,11 @@ export function PromptForm({
                 id: nanoid(),
                 display: <UserMessage>{combinedContent}</UserMessage>
             }
-        ])
+        ]);
 
         try {
-            const responseMessage = await submitUserMessage(value, model, uploadedImages)
-            setMessages(currentMessages => [...currentMessages, responseMessage])
+            const responseMessage = await submitUserMessage(value, model, uploadedImages);
+            setMessages(currentMessages => [...currentMessages, responseMessage]);
         } catch {
             toast(
                 <div className="text-red-600">
@@ -110,19 +116,16 @@ export function PromptForm({
                     </a>
                     .
                 </div>
-            )
+            );
         }
 
-        setUploadedImages([])
-    }
+        setUploadedImages([]);
+    };
 
-    const canUploadAttachments = ['gpt-4', 'gpt-4-turbo', 'gpt-4o-2024-05-13'].includes(model)
+    const canUploadAttachments = ['gpt-4', 'gpt-4-turbo', 'gpt-4o-2024-05-13'].includes(model);
 
     return (
-        <form
-            ref={formRef}
-            onSubmit={handleSubmit}
-        >
+        <form ref={formRef} onSubmit={handleSubmit}>
             <input
                 type="file"
                 className="hidden"
@@ -141,7 +144,7 @@ export function PromptForm({
                                 size="icon"
                                 className="size-8 rounded-full bg-background p-0"
                                 onClick={() => {
-                                    fileRef.current?.click()
+                                    fileRef.current?.click();
                                 }}
                             >
                                 <IconPlus />
@@ -204,5 +207,5 @@ export function PromptForm({
                 Models may make mistakes, always validate your work
             </p>
         </form>
-    )
+    );
 }
