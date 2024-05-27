@@ -57,7 +57,7 @@ const Faq = () => {
                                 <h3 className="text-xl font-semibold">Creating Text</h3>
                                 <ol className="list-decimal list-inside">
                                     <li>Select Model: Choose the model that best fits your text generation needs (e.g., GPT-4 for detailed responses).</li>
-                                    <li>Enter Prompt: Type a detailed prompt or question to guide the text generation, like "Write a short story about a brave knight."</li>
+                                    <li>Enter Prompt: Type a detailed prompt or question to guide the text generation, like Write a short story about a brave knight.</li>
                                     <li>Click Create: Generate your text. The model will process your prompt and provide a text output.</li>
                                 </ol>
 
