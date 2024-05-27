@@ -22,13 +22,15 @@ const Faq = () => {
 
             {isOpen && (
                 <div id="overlay" className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center" onClick={closeOverlay}>
-                    <div className="relative w-full max-w-4xl mx-auto p-4 bg-white rounded-lg overflow-y-auto" style={{ width: '70%', maxHeight: '90vh', overflowY: 'auto' }}>
-                        <button onClick={toggleOverlay} className="absolute top-4 right-4 text-black">
-                            ✖
-                        </button>
+                    <div className="relative w-full max-w-4xl mx-auto p-4 bg-white rounded-lg overflow-y-auto" style={{ width: '70%', maxHeight: '90vh', overflowY: 'auto',  border: '5px solid gray', // Set border width and color
+                        borderRadius: '20px', marginTop:'80px'}}>
+
 
                         <div className="p-4 space-y-6">
                             <h2 className="text-2xl font-bold">FAQ</h2>
+                            <button onClick={toggleOverlay} className="absolute top-4 right-4 text-black">
+                                ✖
+                            </button>
                             <div className="space-y-4">
                                 <h3 className="text-xl font-semibold">What is this app for?</h3>
                                 <p>This app allows you to interact with various AI models for text generation, enabling you to create and refine text content efficiently.</p>
