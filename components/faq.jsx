@@ -50,7 +50,7 @@ const Faq = () => {
                                 <ol className="list-decimal list-inside">
                                     <li>Select the model from the dropdown menu that suits your needs.</li>
                                     <li>Type your prompt or question in the text box provided.</li>
-                                    <li>Click "Create" to generate the text output based on the selected model and entered prompt.</li>
+                                    <li>Click Create to generate the text output based on the selected model and entered prompt.</li>
                                 </ol>
 
                                 <h2 className="text-2xl font-bold">How-To</h2>
