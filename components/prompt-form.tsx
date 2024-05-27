@@ -5,6 +5,7 @@ import { useActions, useUIState } from 'ai/rsc';
 import { UserMessage } from './stocks/message';
 import { type AI } from '@/lib/chat/actions';
 import { Button } from '@/components/ui/button';
+import { Faq } from '@/components/faq';
 import { IconArrowElbow, IconPlus, IconTrash } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
@@ -238,6 +239,10 @@ export function PromptForm({
             <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center">
                 Models may make mistakes, always validate your work
             </p>
+            <div className="flex justify-end max-w-5xl mx-auto">
+                <Faq />
+            </div>
+
         </form>
     );
 }
