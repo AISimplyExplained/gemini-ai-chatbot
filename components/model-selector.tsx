@@ -33,6 +33,8 @@ export function ModelSelector() {
                     <SelectItem value="gpt-4o-2024-05-13">GPT-4o</SelectItem>
                     <SelectItem value="llama3-70b-8192">Llama 3</SelectItem>
                     <SelectItem value="gemini">Gemini</SelectItem>
+                    <SelectItem value="gemma-7b-it">Gemma 7b</SelectItem>
+                    <SelectItem value="mixtral-8x7b-32768">Mixtral</SelectItem>
 
                 </SelectGroup>
             </SelectContent>
