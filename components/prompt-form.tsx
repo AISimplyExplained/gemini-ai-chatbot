@@ -237,7 +237,7 @@ export function PromptForm({
             </div>
 
             <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center">
-                Models may make mistakes, always validate your work
+                {['gemma-7b-it', 'mixtral-8x7b-32768'].includes(model) ? '❗Prone to rate limits' : 'Models may make mistakes, always validate your work'}
             </p>
             <div className="flex justify-end max-w-5xl mx-auto">
                 <Faq />

@@ -22,9 +22,14 @@ export function ModelSelector() {
         setTooltipPosition({ top: rect.top });
     };
 
+    const handleValueChange = (value) => {
+        setModel(value);
+        setTooltipContent('');
+    };
+
     return (
         <div className="relative">
-            <Select defaultValue={model} onValueChange={setModel}>
+            <Select defaultValue={model} onValueChange={handleValueChange}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
@@ -75,14 +80,14 @@ export function ModelSelector() {
                         </SelectItem>
                         <SelectItem
                             value="gemma-7b-it"
-                            onMouseEnter={(e) => handleMouseEnter('Compact, efficient for smaller files', e)}
+                            onMouseEnter={(e) => handleMouseEnter('❗Compact, efficient for smaller files', e)}
                             onMouseLeave={() => setTooltipContent('')}
                         >
                             Gemma
                         </SelectItem>
                         <SelectItem
                             value="mixtral-8x7b-32768"
-                            onMouseEnter={(e) => handleMouseEnter('Innovative, ideal for creative projects', e)}
+                            onMouseEnter={(e) => handleMouseEnter('❗Innovative, ideal for creative projects', e)}
                             onMouseLeave={() => setTooltipContent('')}
                         >
                             Mixtral
