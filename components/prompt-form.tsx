@@ -236,8 +236,11 @@ export function PromptForm({
                 </Tooltip>
             </div>
 
+            <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center mt-2">
+                {'Models may make mistakes, always validate your work'}
+            </p>
             <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center">
-                {['gemma-7b-it', 'mixtral-8x7b-32768'].includes(model) ? '❗Prone to rate limits' : 'Models may make mistakes, always validate your work'}
+                {['gemma-7b-it', 'mixtral-8x7b-32768'].includes(model) ? '❗Prone to rate limits': ''}
             </p>
             <div className="flex justify-end max-w-5xl mx-auto">
                 <Faq />
