@@ -138,7 +138,8 @@ async function submitUserMessage(
   content: string,
   model: string,
   images?: string[],
-  pdfFiles?: {name:string; text:string}[]
+  pdfFiles?: { name: string; text: string }[],
+  csvFiles?: { name: string; text: string }[]
 ) {
   'use server'
 
@@ -167,10 +168,14 @@ async function submitUserMessage(
   }
 
   if (pdfFiles && pdfFiles.length > 0) {
-    pdfFiles.map((val) => {
+    pdfFiles.map(val => {
       messageContent.push({
         type: 'text',
-        text: 'Treat the below text as pdf. \n' + val.text + '\n here, this Pdf ends.'
+        // To ensure that AI reads this text in PDF formate
+        text:
+          'Treat the below text as pdf. \n' +
+          val.text +
+          '\n here, this Pdf ends.'
       })
     })
   }
@@ -183,6 +188,20 @@ async function submitUserMessage(
     })
   }
 
+  if (csvFiles && csvFiles.length > 0) {
+    csvFiles.forEach(file => {
+      messageContent.push({
+        type: 'text',
+        // To ensure that AI reads this text in CSV formate
+        text:
+          'Treat the below text as csv data \n' +
+          file.text +
+          '\n Csv data ends here.'
+      })
+    })
+  }
+
+ 
   aiState.update({
     ...aiState.get(),
     messages: [
