@@ -16,7 +16,7 @@ import { useStreamableText } from '@/lib/hooks/use-streamable-text'
 export function UserMessage({ children }: { children: React.ReactNode }) {
     return (
         <div className="group relative flex items-center justify-end md:-ml-12">
-            <div className="mr-4 flex-1 space-y-2 overflow-hidden pr-2 text-right">
+            <div className="mr-4 flex-1 space-y-2 overflow-hidden pr-2 text-right flex justify-end">
                 {children}
             </div>
             <div className="bg-background flex size-[25px] shrink-0 select-none items-center justify-center rounded-lg border shadow-sm">

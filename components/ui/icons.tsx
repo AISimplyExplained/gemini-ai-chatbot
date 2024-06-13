@@ -734,6 +734,21 @@ export const GooglePayIcon = () => {
   )
 }
 
+const IconsDocument = () => {
+  return (
+    <svg
+      data-testid="document-icon"
+      height="16"
+      viewBox="0 0 16 16"
+      strokeLinejoin="round"
+      width="16"
+      style={{ color: 'white' }}
+    >
+      <path d="M11 0H4C2.89543 0 2 0.895431 2 2V14C2 15.1046 2.89543 16 4 16H12C13.1046 16 14 15.1046 14 14V5L11 0ZM4 14V2H10V5C10 5.55228 9.55228 6 9 6H4V14ZM12 14H6V13H12V14ZM12 12H6V11H12V12ZM12 10H6V9H12V10Z" />
+    </svg>
+  )
+}
+
 export {
   IconEdit,
   IconNextChat,
@@ -761,5 +776,6 @@ export {
   IconShare,
   IconUsers,
   IconExternalLink,
-  IconChevronUpDown
+  IconChevronUpDown,
+  IconsDocument
 }
