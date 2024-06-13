@@ -44,6 +44,10 @@ export function PromptForm({
     }[]
   >([])
 
+  const [uploadingCSVFiles, setUploadingCSVFiles] = React.useState<
+    { name: string; text: string }[]
+  >([])
+
   const [isUploading, setIsUploading] = React.useState(false)
 
   const { model } = useModel()
@@ -59,7 +63,6 @@ export function PromptForm({
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    console.log(event)
     if (!event.target.files) {
       toast.error('No file selected')
       return
@@ -73,9 +76,16 @@ export function PromptForm({
       file.type.startsWith('application/pdf')
     )
 
+    //For checking csv files
+    const csvFiles = files.filter(file => file.type.startsWith('text/csv'))
+
     // Checking for pdf and images
-    if (imageFiles.length <= 0 && pdfFiles.length <= 0) {
-      return toast.error('Only Pdf and Images are allowed.')
+    if (
+      imageFiles.length <= 0 &&
+      pdfFiles.length <= 0 &&
+      csvFiles.length <= 0
+    ) {
+      return toast.error('Only CSV, Pdf and Images are allowed.')
     }
 
     setIsUploading(true)
@@ -112,7 +122,7 @@ export function PromptForm({
         const formData = new FormData()
         formData.append('file', file)
         try {
-          const res = await axios.post('/api/upload', formData, {
+          const res = await axios.post('/api/upload/pdf-to-text', formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -124,7 +134,31 @@ export function PromptForm({
             ])
           }
         } catch (error) {
-          console.error('Error uploading file:', error)
+          toast.error('Error uploading pdf file.')
+        }
+      }
+    }
+
+    if (csvFiles && csvFiles.length > 0) {
+      for (const file of csvFiles) {
+        const fileName = file.name
+        const formData = new FormData()
+        formData.append('csv', file)
+
+        try {
+          const res = await axios.post('/api/upload/csv-to-text', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          })
+          if (res.data?.text) {
+            setUploadingCSVFiles(prev => [
+              ...prev,
+              { name: fileName, text: res.data.text }
+            ])
+          }
+        } catch (error) {
+          toast.error('Error uploading csv file.')
         }
       }
     }
@@ -182,6 +216,19 @@ export function PromptForm({
             </div>
           )
         })}
+        {uploadingCSVFiles.map((val, index) => {
+          return (
+            <div
+              key={index}
+              className="bg-zinc-200 flex items-center p-2 rounded-xl gap-2"
+            >
+              <span className="bg-white p-2 rounded-lg flex items-center justify-center">
+                <IconsDocument />
+              </span>
+              <span>{val.name}</span>
+            </div>
+          )
+        })}
       </div>
     )
 
@@ -199,7 +246,8 @@ export function PromptForm({
         message: value,
         model: model,
         images: uploadedImages,
-        file: uploadedPdfFiles
+        file: uploadedPdfFiles,
+        csv: uploadingCSVFiles
       }
 
       // Log the JSON payload
@@ -209,10 +257,13 @@ export function PromptForm({
         value,
         model,
         uploadedImages,
-        uploadedPdfFiles
+        uploadedPdfFiles,
+        uploadingCSVFiles
       )
+      console.log(uploadingCSVFiles)
       setUploadedImages([])
       setUploadedPdfFiles([])
+      setUploadingCSVFiles([])
       setMessages(currentMessages => [...currentMessages, responseMessage])
     } catch (error) {
       console.error('Error submitting message:', error)
@@ -231,8 +282,6 @@ export function PromptForm({
         </div>
       )
     }
-
-    
   }
 
   const canUploadAttachments = [
@@ -248,7 +297,7 @@ export function PromptForm({
         className="hidden"
         id="file"
         ref={fileRef}
-        accept="images/*"
+        // accept="images/*"
         onChange={handleFileChange}
         multiple
       />
@@ -314,7 +363,29 @@ export function PromptForm({
                   }}
                 >
                   <IconTrash className="w-4 h-4" />
-                  <span className="sr-only">Remove image</span>
+                  <span className="sr-only">Remove PDF</span>
+                </Button>
+              </div>
+            )
+          })}
+          {uploadingCSVFiles.map((_, index) => {
+            return (
+              <div
+                key={index}
+                className="relative h-12 w-12 flex items-center justify-center bg-black mx-1 rounded-lg "
+              >
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute  text-red-500 bg-white rounded-full p-1"
+                  onClick={() => {
+                    setUploadingCSVFiles(prevFile =>
+                      prevFile.filter((_, i) => i !== index)
+                    )
+                  }}
+                >
+                  <IconTrash className="w-4 h-4" />
+                  <span className="sr-only">Remove CSV</span>
                 </Button>
               </div>
             )
