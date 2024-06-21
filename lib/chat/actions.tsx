@@ -172,26 +172,30 @@ async function getWebSearches(query) : string{
 
         // Convert the search results to React components
         const webPages = data.webPages?.value.slice(0, 6).map((page, index) => (
-          <div className='' key={index}>
-              <a className='p-12' href={page.url} target="_blank" rel="noopener noreferrer">
-                  <h3>{page.name}</h3>
-              </a>
-              <p>{page.snippet}</p>
+          <div className='my-4 p-2 bg-gray-100 rounded-md border-gray-300 border'>
+            <a className="pb-4" href={page.url} target="_blank" rel="noopener noreferrer">
+              <div className='' key={index}>
+                      <h3>{page.name}</h3>
+                  <p className='text-xs text-gray-700'>{page.snippet}</p>
+              </div>
+            </a>
           </div>
-      ));
+        ));
 
       const relatedSearches = data.relatedSearches?.value.slice(0, 2).map((search, index) => (
-          <div key={index}>
-              <a href={search.webSearchUrl} target="_blank" rel="noopener noreferrer">
-                  {search.text}
-              </a>
-          </div>
+        <div className='m-2 p-2 bg-gray-100 rounded-md text-xs'>
+          <a href={search.webSearchUrl} target="_blank" rel="noopener noreferrer">
+            <div key={index}>
+                    {search.text}
+            </div>
+          </a>
+        </div>
       ));
 
       return (
           <div>
               <div>
-                  <h2>Web Pages:</h2>
+                  <h2>Here are few search results:</h2>
                   {webPages}
               </div>
               <div>
@@ -202,7 +206,7 @@ async function getWebSearches(query) : string{
       );
   } catch (error) {
     console.error("Error fetching search results:", error);
-    throw error;
+    return "Unable to perform search. Something went wrong. Please try again."
   }
 }
 
@@ -337,7 +341,80 @@ async function submitUserMessage(
 
           const finalToolResult = getWebSearches(query);
 
+          // aiState.done({
+          //   ...aiState.get(),
+          //   messages: [
+          //     ...aiState.get().messages,
+          //     {
+          //       id: nanoid(),
+          //       role: 'assistant',
+          //       content: [
+          //         {
+          //           type: 'tool-call',
+          //           toolName: 'searchWeb',
+          //           toolCallId,
+          //           args: { query }
+          //         }
+          //       ]
+          //     },
+          //     {
+          //       id: nanoid(),
+          //       role: 'tool',
+          //       content: [
+          //         {
+          //           type: 'tool-result',
+          //           toolName: 'searchWeb',
+          //           toolCallId,
+          //           result: query
+          //         }
+          //       ]
+          //     }
+          //   ]
+          // })
 
+          // Let's get the text response
+
+          
+          // const newResult = await streamUI({
+          //   model: api(model),
+          //   initial: <SpinnerMessage />,
+          //   system: `You are a helpful assistant`,
+          //   messages: [
+          //     ...aiState.get().messages
+          //   ],
+          //   text: ({ content, done, delta }) => {
+          //     if (!textStream) {
+          //       textStream = createStreamableValue('')
+          //       textNode = <BotMessage content={textStream.value} />
+          //     }
+
+          //     if (done) {
+          //       textStream.done()
+          //       aiState.done({
+          //         ...aiState.get(),
+          //         messages: [
+          //           ...aiState.get().messages,
+          //           {
+          //             id: nanoid(),
+          //             role: 'assistant',
+          //             content: [
+          //               {
+          //                 type: 'text',
+          //                 text: content
+          //               }
+          //             ]
+          //           }
+          //         ]
+          //       })
+          //     } else {
+          //       textStream.update(delta)
+          //     }
+          //     return textNode
+          //   }
+          // })
+          // return (
+          //   newResult.value
+          // )
           return finalToolResult;
         },
       }),
