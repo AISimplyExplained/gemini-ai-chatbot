@@ -33,6 +33,9 @@ import {
   sleep
 } from '@/lib/utils'
 
+import { tool } from 'ai';
+import { z } from 'zod';
+
 async function confirmPurchase(symbol: string, price: number, amount: number) {
   'use server'
 
@@ -133,6 +136,80 @@ type SystemMessage = {
 }
 
 type Message = UserMessage | AssistantMessage | SystemMessage
+
+async function getWebSearches(query) : string{
+  const endpoint = "https://api.bing.microsoft.com/v7.0/search";      
+  const urlQuery = encodeURIComponent(query);      
+  const apiKey = process.env.BING_SEARCH_API_KEY
+  const options = {
+    mkt: "en-us",
+    safeSearch: "moderate",
+    textDecorations: true,
+    textFormat: "raw",
+    count: 10,
+    offset: 0,
+  };
+  const queryParams = new URLSearchParams({
+    q: urlQuery,
+    ...options,
+  }).toString();
+
+  const url = `${endpoint}?${queryParams}`;      
+  const headers = {
+    "Ocp-Apim-Subscription-Key": apiKey,
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  };
+
+  try {
+    const response = await fetch(url, { headers });      
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+  //  let resultString : string = `Search Results for "${query}":\n\n`;
+
+        // Convert the search results to React components
+        const webPages = data.webPages?.value.slice(0, 6).map((page, index) => (
+          <div className='my-4 p-2 bg-gray-100 rounded-md border-gray-300 border'>
+            <a className="pb-4" href={page.url} target="_blank" rel="noopener noreferrer">
+              <div className='' key={index}>
+                      <h3>{page.name}</h3>
+                  <p className='text-xs text-gray-700'>{page.snippet}</p>
+              </div>
+            </a>
+          </div>
+        ));
+
+      const relatedSearches = data.relatedSearches?.value.slice(0, 2).map((search, index) => (
+        <div className='m-2 p-2 bg-gray-100 rounded-md text-xs'>
+          <a href={search.webSearchUrl} target="_blank" rel="noopener noreferrer">
+            <div key={index}>
+                    {search.text}
+            </div>
+          </a>
+        </div>
+      ));
+
+      return (
+          <div>
+              <div>
+                  <h2>Here are few search results:</h2>
+                  {webPages}
+              </div>
+              <div>
+                  <h2>Related Searches:</h2>
+                  {relatedSearches}
+              </div>
+          </div>
+      );
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    return "Unable to perform search. Something went wrong. Please try again."
+  }
+}
+
 
 async function submitUserMessage(
   content: string,
@@ -252,8 +329,97 @@ async function submitUserMessage(
       }
 
       return textNode
-    }
-  })
+    },
+    tools: {
+      searchWeb: tool({
+        description: 'A tool for performing web searches.',
+        parameters: z.object({ query: z.string().describe('The query for web search') }),
+        generate: async ({ query }) => {
+
+          await sleep(1000);
+          // const toolCallId = nanoid();
+
+          const finalToolResult = getWebSearches(query);
+
+          // aiState.done({
+          //   ...aiState.get(),
+          //   messages: [
+          //     ...aiState.get().messages,
+          //     {
+          //       id: nanoid(),
+          //       role: 'assistant',
+          //       content: [
+          //         {
+          //           type: 'tool-call',
+          //           toolName: 'searchWeb',
+          //           toolCallId,
+          //           args: { query }
+          //         }
+          //       ]
+          //     },
+          //     {
+          //       id: nanoid(),
+          //       role: 'tool',
+          //       content: [
+          //         {
+          //           type: 'tool-result',
+          //           toolName: 'searchWeb',
+          //           toolCallId,
+          //           result: query
+          //         }
+          //       ]
+          //     }
+          //   ]
+          // })
+
+          // Let's get the text response
+
+          
+          // const newResult = await streamUI({
+          //   model: api(model),
+          //   initial: <SpinnerMessage />,
+          //   system: `You are a helpful assistant`,
+          //   messages: [
+          //     ...aiState.get().messages
+          //   ],
+          //   text: ({ content, done, delta }) => {
+          //     if (!textStream) {
+          //       textStream = createStreamableValue('')
+          //       textNode = <BotMessage content={textStream.value} />
+          //     }
+
+          //     if (done) {
+          //       textStream.done()
+          //       aiState.done({
+          //         ...aiState.get(),
+          //         messages: [
+          //           ...aiState.get().messages,
+          //           {
+          //             id: nanoid(),
+          //             role: 'assistant',
+          //             content: [
+          //               {
+          //                 type: 'text',
+          //                 text: content
+          //               }
+          //             ]
+          //           }
+          //         ]
+          //       })
+          //     } else {
+          //       textStream.update(delta)
+          //     }
+          //     return textNode
+          //   }
+          // })
+          // return (
+          //   newResult.value
+          // )
+          return finalToolResult;
+        },
+      }),
+    },
+  });
 
   return {
     id: nanoid(),
