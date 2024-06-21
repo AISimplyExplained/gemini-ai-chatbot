@@ -33,6 +33,9 @@ import {
   sleep
 } from '@/lib/utils'
 
+import { tool } from 'ai';
+import { z } from 'zod';
+
 async function confirmPurchase(symbol: string, price: number, amount: number) {
   'use server'
 
@@ -133,6 +136,76 @@ type SystemMessage = {
 }
 
 type Message = UserMessage | AssistantMessage | SystemMessage
+
+async function getWebSearches(query) : string{
+  const endpoint = "https://api.bing.microsoft.com/v7.0/search";      
+  const urlQuery = encodeURIComponent(query);      
+  const apiKey = process.env.BING_SEARCH_API_KEY
+  const options = {
+    mkt: "en-us",
+    safeSearch: "moderate",
+    textDecorations: true,
+    textFormat: "raw",
+    count: 10,
+    offset: 0,
+  };
+  const queryParams = new URLSearchParams({
+    q: urlQuery,
+    ...options,
+  }).toString();
+
+  const url = `${endpoint}?${queryParams}`;      
+  const headers = {
+    "Ocp-Apim-Subscription-Key": apiKey,
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  };
+
+  try {
+    const response = await fetch(url, { headers });      
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+  //  let resultString : string = `Search Results for "${query}":\n\n`;
+
+        // Convert the search results to React components
+        const webPages = data.webPages?.value.slice(0, 6).map((page, index) => (
+          <div className='' key={index}>
+              <a className='p-12' href={page.url} target="_blank" rel="noopener noreferrer">
+                  <h3>{page.name}</h3>
+              </a>
+              <p>{page.snippet}</p>
+          </div>
+      ));
+
+      const relatedSearches = data.relatedSearches?.value.slice(0, 2).map((search, index) => (
+          <div key={index}>
+              <a href={search.webSearchUrl} target="_blank" rel="noopener noreferrer">
+                  {search.text}
+              </a>
+          </div>
+      ));
+
+      return (
+          <div>
+              <div>
+                  <h2>Web Pages:</h2>
+                  {webPages}
+              </div>
+              <div>
+                  <h2>Related Searches:</h2>
+                  {relatedSearches}
+              </div>
+          </div>
+      );
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    throw error;
+  }
+}
+
 
 async function submitUserMessage(
   content: string,
@@ -252,8 +325,24 @@ async function submitUserMessage(
       }
 
       return textNode
-    }
-  })
+    },
+    tools: {
+      searchWeb: tool({
+        description: 'A tool for performing web searches.',
+        parameters: z.object({ query: z.string().describe('The query for web search') }),
+        generate: async ({ query }) => {
+
+          await sleep(1000);
+          // const toolCallId = nanoid();
+
+          const finalToolResult = getWebSearches(query);
+
+
+          return finalToolResult;
+        },
+      }),
+    },
+  });
 
   return {
     id: nanoid(),
