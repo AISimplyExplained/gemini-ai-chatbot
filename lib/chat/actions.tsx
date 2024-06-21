@@ -172,7 +172,7 @@ async function getWebSearches(query) : string{
 
         // Convert the search results to React components
         const webPages = data.webPages?.value.slice(0, 6).map((page, index) => (
-          <div className='my-4 p-2 bg-gray-100 rounded-md border-gray-300 border'>
+          <div key={index} className='my-4 p-2 bg-gray-100 rounded-md border-gray-300 border'>
             <a className="pb-4" href={page.url} target="_blank" rel="noopener noreferrer">
               <div className='' key={index}>
                       <h3>{page.name}</h3>
@@ -183,7 +183,7 @@ async function getWebSearches(query) : string{
         ));
 
       const relatedSearches = data.relatedSearches?.value.slice(0, 2).map((search, index) => (
-        <div className='m-2 p-2 bg-gray-100 rounded-md text-xs'>
+        <div key={index} className='m-2 p-2 bg-gray-100 rounded-md text-xs'>
           <a href={search.webSearchUrl} target="_blank" rel="noopener noreferrer">
             <div key={index}>
                     {search.text}
