@@ -243,7 +243,7 @@ async function submitUserMessage(
   const isGroqModel = groqModels.includes(model)
   const isAnthropicModel= model ==='claude-3-sonnet-20240229'
 
-  const api = isGroqModel ? groq : isGeminiModel ? gemini : isGeminiModel ? anthropic : openai
+  const api = isGroqModel ? groq : isGeminiModel ? gemini : isAnthropicModel ? anthropic : openai
   const aiState = getMutableAIState<typeof AI>()
 
   // Prepare the message content
