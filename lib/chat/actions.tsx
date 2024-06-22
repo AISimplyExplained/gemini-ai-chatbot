@@ -241,7 +241,7 @@ async function submitUserMessage(
   // Determine the API based on the model name
   const isGeminiModel = model === 'gemini'
   const isGroqModel = groqModels.includes(model)
-  const isAnthropicModel= model ==='claude-3-sonnet-20240229'
+  const isAnthropicModel= model ==='claude-3-5-sonnet-20240620'
 
   const api = isGroqModel ? groq : isGeminiModel ? gemini : isAnthropicModel ? anthropic : openai
   const aiState = getMutableAIState<typeof AI>()
