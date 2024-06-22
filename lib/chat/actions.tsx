@@ -1,5 +1,6 @@
 // @ts-nocheck
 import 'server-only'
+import { anthropic } from '@ai-sdk/anthropic';
 
 import { createOpenAI, openai } from '@ai-sdk/openai'
 import {
@@ -240,8 +241,9 @@ async function submitUserMessage(
   // Determine the API based on the model name
   const isGeminiModel = model === 'gemini'
   const isGroqModel = groqModels.includes(model)
+  const isAnthropicModel= model ==='claude-3-sonnet-20240229'
 
-  const api = isGroqModel ? groq : isGeminiModel ? gemini : openai
+  const api = isGroqModel ? groq : isGeminiModel ? gemini : isGeminiModel ? anthropic : openai
   const aiState = getMutableAIState<typeof AI>()
 
   // Prepare the message content
