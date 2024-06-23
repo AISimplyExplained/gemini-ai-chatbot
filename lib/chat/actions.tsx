@@ -139,7 +139,7 @@ type SystemMessage = {
 
 type Message = UserMessage | AssistantMessage | SystemMessage
 
-async function getWebSearches(query) : string{
+async function getWebSearches(query) {
   const endpoint = "https://api.bing.microsoft.com/v7.0/search";      
   const urlQuery = encodeURIComponent(query);      
   const apiKey = process.env.BING_SEARCH_API_KEY
@@ -169,6 +169,7 @@ async function getWebSearches(query) : string{
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    const linksArray = [];
     const data = await response.json();
     let resultString : string = `Search Results for "${query}": `;
 
@@ -176,6 +177,7 @@ async function getWebSearches(query) : string{
       resultString += "Web Pages result: ";
       data.webPages.value.forEach((page) => {
         resultString += `- ${page.name}: ${page.url} ,`;
+        linksArray.push({"link": page.url, "name": page.name})
         if (page.snippet) resultString += `  Snippet: ${page.snippet} ,`;
         resultString += ",";
       });
@@ -212,7 +214,7 @@ async function getWebSearches(query) : string{
       });
     }
 
-    return resultString;
+    return {resultString, linksArray};
   } catch (error) {
     console.error("Error fetching search results:", error);
     return "Something went wrong. Please try again."
@@ -363,7 +365,10 @@ async function submitUserMessage(
           yield <ToolCallLoading concisedQuery={concisedQuery}/>
           await sleep(1000);
           const toolCallId = nanoid();
-          const finalToolResult = await getWebSearches(query);
+          const {resultString, linksArray}  = await getWebSearches(query);
+          const finalToolResult = resultString;
+          const toolCallMeta = {concisedQuery, linksArray}
+
 
           aiState.done({
             ...aiState.get(),
@@ -407,7 +412,7 @@ async function submitUserMessage(
             text: ({ content, done, delta }) => {
               if (!textStream) {
                 textStream = createStreamableValue('')
-                textNode = <ToolMessage content={textStream.value} concisedQuery={concisedQuery}/>
+                textNode = <ToolMessage content={textStream.value} toolCallMeta={toolCallMeta}/>
               }
 
               if (done) {
