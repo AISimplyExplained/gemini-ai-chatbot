@@ -44,13 +44,6 @@ export function ModelSelector() {
                             GPT 3.5
                         </SelectItem>
                         <SelectItem
-                            value="claude-3-5-sonnet-20240620"
-                            onMouseEnter={(e) => handleMouseEnter('Smartest of them all.', e)}
-                            onMouseLeave={() => setTooltipContent('')}
-                        >
-                            Claude 3.5 Sonnet
-                        </SelectItem>
-                        <SelectItem
                             value="gpt-4"
                             onMouseEnter={(e) => handleMouseEnter('Highly creative, detailed responses', e)}
                             onMouseLeave={() => setTooltipContent('')}
@@ -70,6 +63,13 @@ export function ModelSelector() {
                             onMouseLeave={() => setTooltipContent('')}
                         >
                             GPT-4o
+                        </SelectItem>
+                        <SelectItem
+                            value="claude-3-5-sonnet-20240620"
+                            onMouseEnter={(e) => handleMouseEnter('Smartest of them all.', e)}
+                            onMouseLeave={() => setTooltipContent('')}
+                        >
+                            Claude 3.5 Sonnet
                         </SelectItem>
                         <SelectItem
                             value="llama3-70b-8192"
