@@ -120,36 +120,31 @@ export function ToolMessage({
         <img className="size-6 object-contain" src="/images/gemini.png" alt="gemini logo" />
       </div>
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
-        <h1 className='text-gray-500 p-[3px]'>Searched {toolCallMeta.linksArray.length} sites</h1>
         {
           toolCallMeta.concisedQuery && toolCallMeta.concisedQuery.length > 0 && (
             <>
               <Accordion type="single" collapsible>
                 <AccordionItem value="item-1">
-                  <AccordionTrigger className='hover:no-underline hover:bg-gray-100 px-2 text-gray-500  cursor-pointer py-4 border border-gray-300 rounded-md shadow-lg'>
-                    <div className='flex'>
-                      <img className="w-6 h-6 object-contain mx-2 scale-75" src="/images/search.png" alt="gemini logo" />
-                      <div className='flex flex-col'>
-                        <span>
-                          "{toolCallMeta.concisedQuery}"
-                        </span>
-                        <span className='text-sm'>
-                          bing.com
-                        </span>
-                      </div>
-                    </div>
+                  <AccordionTrigger className='flex justify-start hover:no-underline text-gray-500  cursor-pointer py-[2px]'>
+                    Searched {toolCallMeta.linksArray.length} sites
                   </AccordionTrigger>
                   <div className='h-2'></div>
                   <AccordionContent className='text-gray-500 border border-gray-300 rounded-md shadow-lg pb-0'>
-                        <a href={`https://www.bing.com/search?q=${encodeURIComponent(toolCallMeta.concisedQuery)}`} target='_blank' className='border-b border-gray-300 flex flex-col text-sm text-gray-500 hover:bg-gray-100 transition p-4 rounded-sm ' rel="noopener noreferrer">
+                        <a href={`https://www.bing.com/search?q=${encodeURIComponent(toolCallMeta.concisedQuery)}`} target='_blank' className='border-b border-gray-300 flex text-sm text-gray-500 hover:bg-gray-100 transition p-4 rounded-sm ' rel="noopener noreferrer">
+                        <img className="w-6 h-6 object-contain mx-2 scale-75" src="/images/search.png" alt="gemini logo" />
+                        <div className='flex flex-col'>
                           <span className='text-sm'>"{toolCallMeta.concisedQuery}"</span>
                           <span className='text-xs'>bing.com</span>
+                        </div>
                         </a>
                         {toolCallMeta.linksArray.map((linkMeta: {link: string, name: string}, index) => {
                           return (
-                            <a href={linkMeta.link} key={index} className='border-b border-gray-300 flex flex-col text-sm text-gray-500 hover:bg-gray-100 transition-transform p-4 rounded-sm' target="_blank" rel="noopener noreferrer">
-                              <span className='text-sm'>{linkMeta.name}</span>
-                              <span className='text-xs'>{linkMeta.link}</span>
+                            <a href={linkMeta.link} key={index} className='border-b border-gray-300 flex text-sm text-gray-500 hover:bg-gray-100 transition-transform p-4 rounded-sm' target="_blank" rel="noopener noreferrer">
+                              <img className="w-6 h-6 object-contain mx-2 scale-75" src="/images/search.png" alt="gemini logo" />
+                              <div className='flex flex-col'>
+                                <span className='text-sm'>{linkMeta.name}</span>
+                                <span className='text-xs'>{linkMeta.link}</span>
+                              </div>
                             </a>
                           );
                         })}

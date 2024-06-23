@@ -172,6 +172,7 @@ async function getWebSearches(query) {
     const linksArray = [];
     const data = await response.json();
     let resultString : string = `Search Results for "${query}": `;
+    console.log(data.webPages.value)
 
     if (data.webPages && data.webPages.value) {
       resultString += "Web Pages result: ";
