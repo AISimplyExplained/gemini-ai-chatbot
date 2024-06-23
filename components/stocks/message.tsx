@@ -133,7 +133,7 @@ export function ToolMessage({
                         <a href={`https://www.bing.com/search?q=${encodeURIComponent(toolCallMeta.concisedQuery)}`} target='_blank' className='border-b border-gray-300 flex text-sm text-gray-500 hover:bg-gray-100 transition p-4 rounded-sm ' rel="noopener noreferrer">
                         <img className="w-6 h-6 object-contain mx-2 scale-75" src="/images/search.png" alt="gemini logo" />
                         <div className='flex flex-col'>
-                          <span className='text-sm'>"{toolCallMeta.concisedQuery}"</span>
+                          <span className='text-sm'>{toolCallMeta.concisedQuery}</span>
                           <span className='text-xs'>bing.com</span>
                         </div>
                         </a>
