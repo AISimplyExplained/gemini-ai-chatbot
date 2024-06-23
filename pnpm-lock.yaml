@@ -55,7 +55,7 @@ importers:
         version: 0.6.2
       ai:
         specifier: ^3.1.5
-        version: 3.1.32(openai@4.50.0)(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
+        version: 3.1.32(openai@4.52.0)(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8)
       axios:
         specifier: ^1.7.2
         version: 1.7.2
@@ -96,8 +96,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1(next@14.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       openai:
-        specifier: ^4.24.7
-        version: 4.50.0
+        specifier: ^4.52.0
+        version: 4.52.0
       pdf-ts:
         specifier: ^0.0.2
         version: 0.0.2(webpack@4.47.0)
@@ -3068,8 +3068,8 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
-  openai@4.50.0:
-    resolution: {integrity: sha512-2ADkNIU6Q589oYHr5pn9k7SbUcrBTK9X0rIXrYqwMVSoqOj1yK9/1OO0ExaWsqOOpD7o58UmRjeKlx9gKAcuKQ==}
+  openai@4.52.0:
+    resolution: {integrity: sha512-xmiNcdA9QJ5wffHpZDpIsge6AsPTETJ6h5iqDNuFQ7qGSNtonHn8Qe0VHy4UwLE8rBWiSqh4j+iSvuYZSeKkPg==}
     hasBin: true
 
   optionator@0.9.4:
@@ -5207,7 +5207,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.1.32(openai@4.50.0)(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
+  ai@3.1.32(openai@4.52.0)(react@18.3.1)(solid-js@1.8.17)(svelte@4.2.18)(vue@3.4.27(typescript@5.4.5))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.10
       '@ai-sdk/provider-utils': 0.0.13(zod@3.23.8)
@@ -5224,7 +5224,7 @@ snapshots:
       sswr: 2.1.0(svelte@4.2.18)
       zod-to-json-schema: 3.22.5(zod@3.23.8)
     optionalDependencies:
-      openai: 4.50.0
+      openai: 4.52.0
       react: 18.3.1
       svelte: 4.2.18
       zod: 3.23.8
@@ -7679,7 +7679,7 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@4.50.0:
+  openai@4.52.0:
     dependencies:
       '@types/node': 18.19.34
       '@types/node-fetch': 2.6.11
