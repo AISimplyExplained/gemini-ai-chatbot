@@ -12,6 +12,8 @@ import {
   streamUI
 } from 'ai/rsc'
 
+import OpenAI from 'openai'
+
 import {
   BotCard,
   BotMessage,
@@ -24,7 +26,7 @@ import {
 import { saveChat } from '@/app/actions'
 import { auth } from '@/auth'
 import { Events } from '@/components/stocks/events'
-import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
+import { SpinnerMessage, ToolCallLoading, ToolMessage, UserMessage } from '@/components/stocks/message'
 import { Stocks } from '@/components/stocks/stocks'
 import { Chat } from '@/lib/types'
 import {
@@ -138,7 +140,7 @@ type SystemMessage = {
 
 type Message = UserMessage | AssistantMessage | SystemMessage
 
-async function getWebSearches(query) : string{
+async function getWebSearches(query) {
   const endpoint = "https://api.bing.microsoft.com/v7.0/search";      
   const urlQuery = encodeURIComponent(query);      
   const apiKey = process.env.BING_SEARCH_API_KEY
@@ -168,50 +170,53 @@ async function getWebSearches(query) : string{
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    const linksArray = [];
     const data = await response.json();
-    let resultString : string = `Search Results for "${query}":\n\n`;
+    let resultString : string = `Search Results for "${query}": `;
+    console.log(data.webPages.value)
 
     if (data.webPages && data.webPages.value) {
-      resultString += "Web Pages:\n";
+      resultString += "Web Pages result: ";
       data.webPages.value.forEach((page) => {
-        resultString += `- ${page.name}: ${page.url}\n`;
-        if (page.snippet) resultString += `  Snippet: ${page.snippet}\n`;
-        resultString += "\n";
+        resultString += `- ${page.name}: ${page.url} ,`;
+        linksArray.push({"link": page.url, "name": page.name})
+        if (page.snippet) resultString += `  Snippet: ${page.snippet} ,`;
+        resultString += ",";
       });
     }
 
     if (data.images && data.images.value) {
-      resultString += "Images:\n";
+      resultString += "Images result: ";
       data.images.value.forEach((image) => {
-        resultString += `- ${image.name}: ${image.contentUrl}\n`;
-        resultString += `  Thumbnail: ${image.thumbnailUrl}\n\n`;
+        resultString += `- ${image.name}: ${image.contentUrl}, `;
+        resultString += `  Thumbnail: ${image.thumbnailUrl},`;
       });
     }
 
     if (data.videos && data.videos.value) {
-      resultString += "Videos:\n";
+      resultString += "Videos result: ";
       data.videos.value.forEach((video) => {
-        resultString += `- ${video.name}: ${video.contentUrl}\n`;
+        resultString += `- ${video.name}: ${video.contentUrl} ,`;
         if (video.description)
-          resultString += `  Description: ${video.description}\n`;
-        resultString += `  Thumbnail: ${video.thumbnailUrl}\n\n`;
+          resultString += `  Description: ${video.description} ,`;
+        resultString += `  Thumbnail: ${video.thumbnailUrl}, `;
       });
     }
 
     if (data.news && data.news.value) {
-      resultString += "News:\n";
+      resultString += "News result:,";
       data.news.value.forEach((news) => {
-        resultString += `- ${news.name}: ${news.url}\n`;
+        resultString += `- ${news.name}: ${news.url},`;
         if (news.description)
-          resultString += `  Description: ${news.description}\n`;
+          resultString += `  Description: ${news.description},`;
         if (news.image && news.image.thumbnail) {
-          resultString += `  Thumbnail: ${news.image.thumbnail.contentUrl}\n`;
+          resultString += `  Thumbnail: ${news.image.thumbnail.contentUrl},`;
         }
-        resultString += "\n";
+        resultString += ",";
       });
     }
 
-    return resultString;
+    return {resultString, linksArray};
   } catch (error) {
     console.error("Error fetching search results:", error);
     return "Something went wrong. Please try again."
@@ -227,6 +232,8 @@ async function submitUserMessage(
   csvFiles?: { name: string; text: string }[]
 ) {
   'use server'
+
+  const openaiOriginal = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
   const groq = createOpenAI({
     baseURL: 'https://api.groq.com/openai/v1',
@@ -343,12 +350,28 @@ async function submitUserMessage(
       searchWeb: tool({
         description: 'A tool for performing web searches.',
         parameters: z.object({ query: z.string().describe('The query for web search') }),
-        generate: async ({ query }) => {
-
+        generate: async function* ({ query }) {
+          let concisedQuery = '';
+          try {
+            const completion = await openaiOriginal.chat.completions.create({
+              messages: [
+                { role: "system", content: "You will should receive the query, identify its primary context, and generate a concise and precise query that captures the main intent. For example, if the input query is 'get the latest AI news,' the model should output 'latest AI news." },
+                { role: "user", content: query },
+              ],
+              model: "gpt-3.5-turbo-16k",
+            });
+            concisedQuery = completion?.choices[0]?.message?.content;
+          } catch (error) {
+            console.error("An error occurred:", error);
+          }
+          
+          yield <ToolCallLoading concisedQuery={concisedQuery}/>
           await sleep(1000);
           const toolCallId = nanoid();
+          const {resultString, linksArray}  = await getWebSearches(query);
+          const finalToolResult = resultString;
+          const toolCallMeta = {concisedQuery, linksArray}
 
-          const finalToolResult = await getWebSearches(query);
 
           aiState.done({
             ...aiState.get(),
@@ -381,24 +404,18 @@ async function submitUserMessage(
             ]
           })
 
-          // const log = aiState.get().messages;
-          // for(let i = 0; i< log.length; i++){
-          //   console.log(log[i].role, log[i].content)
-          // }
-          // console.log(aiState.get())
-
           // Let's get the text response          
           const newResult = await streamUI({
             model: api(model),
-            initial: <SpinnerMessage />,
-            system: `You are a helpful assistant, you extract the relevant data from the given data`,
+            initial: <h1>Searching the web...</h1>,
+            system: `You are a helpful assistant, you extract the relevant data from the given data and try to answer precisely, only share links if asked or required`,
             messages: [
               ...aiState.get().messages
             ],
             text: ({ content, done, delta }) => {
               if (!textStream) {
                 textStream = createStreamableValue('')
-                textNode = <BotMessage content={textStream.value} />
+                textNode = <ToolMessage content={textStream.value} toolCallMeta={toolCallMeta}/>
               }
 
               if (done) {
@@ -428,7 +445,6 @@ async function submitUserMessage(
           return (
             newResult.value
           )
-          // return finalToolResult;
         },
       }),
     },
