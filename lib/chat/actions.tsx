@@ -26,7 +26,7 @@ import {
 import { saveChat } from '@/app/actions'
 import { auth } from '@/auth'
 import { Events } from '@/components/stocks/events'
-import { SpinnerMessage, ToolCallLoading, ToolMessage, UserMessage } from '@/components/stocks/message'
+import { SpinnerMessage, ToolCallLoading, ToolImageLoading, ToolImages, ToolMessage, UserMessage } from '@/components/stocks/message'
 import { Stocks } from '@/components/stocks/stocks'
 import { Chat } from '@/lib/types'
 import {
@@ -447,6 +447,103 @@ async function submitUserMessage(
           )
         },
       }),
+      generateImage: tool({
+        description: 'A tool for generating images using DALL·E 3.',
+        parameters: z.object({
+          prompt: z.string().describe('The prompt for image generation'),
+        }),
+        generate: async function* ({ prompt }) {
+          yield <ToolImageLoading/>
+          await sleep(1000)
+          const toolCallId = nanoid()
+
+          let imageUrl = ''
+          try {
+            const completion = await openaiOriginal.images.generate({
+              prompt,
+              model: 'dall-e-3',
+            })
+
+            imageUrl = completion?.data?.[0]?.url
+          } catch (error) {
+            console.error('An error occurred:', error)
+          }
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolName: 'generateImage',
+                    toolCallId,
+                    args: { prompt }
+                  }
+                ]
+              },
+              {
+                id: nanoid(),
+                role: 'tool',
+                content: [
+                  {
+                    type: 'tool-result',
+                    toolName: 'generateImage',
+                    toolCallId,
+                    result: imageUrl
+                  }
+                ]
+              }
+            ]
+          })
+          const newResult = await streamUI({
+            model: api(model),
+            initial: <h1>Generating image...</h1>,
+            system: `You are a helpful assistant. You extract relevant data from the given data and try to answer precisely, only share links if asked or required.`,
+            messages: [
+              ...aiState.get().messages,
+            ],
+            text: ({ content, done, delta }) => {
+              if (!textStream) {
+                textStream = createStreamableValue('');
+                textNode = <ToolImages content={textStream.value}/>
+              }
+        
+              if (done) {
+                textStream.done();
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'text',
+                          text: content,
+                        },
+                        {
+                          type: 'image',
+                          url: imageUrl,
+                        },
+                      ],
+                    },
+                  ],
+                });
+              } else {
+                textStream.update(delta);
+              }
+              return textNode;
+            },
+          });
+
+          return newResult.value;
+        }
+      })
     },
   });
 
