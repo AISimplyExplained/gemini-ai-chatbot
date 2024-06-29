@@ -14,7 +14,7 @@ import { ChatMessageActions } from '@/components/chat-message-actions'
 export interface ChatMessageProps {
   message: Message
 }
-
+//hello
 export function ChatMessage({ message, ...props }: ChatMessageProps) {
   return (
     <div
