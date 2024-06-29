@@ -1,6 +1,8 @@
 // @ts-nocheck
 import 'server-only'
 import { anthropic } from '@ai-sdk/anthropic';
+import { parseStringPromise } from 'xml2js';
+
 
 import { createOpenAI, openai } from '@ai-sdk/openai'
 import {
@@ -26,7 +28,7 @@ import {
 import { saveChat } from '@/app/actions'
 import { auth } from '@/auth'
 import { Events } from '@/components/stocks/events'
-import { SpinnerMessage, ToolCallLoading, ToolImageLoading, ToolImages, ToolMessage, UserMessage } from '@/components/stocks/message'
+import { SpinnerMessage, ToolCallLoading, ToolImageLoading, ToolImages, ToolMessage, UserMessage, ToolLoadingAnimate, ArxivToolMessage } from '@/components/stocks/message'
 import { Stocks } from '@/components/stocks/stocks'
 import { Chat } from '@/lib/types'
 import {
@@ -223,6 +225,72 @@ async function getWebSearches(query) {
   }
 }
 
+// async function fetchArxiv(query) {
+//   console.log(query)
+//   try {
+//     const response = await fetch(`http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=10`);
+//     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+//     const xml = await response.text();
+//     const json = await parseStringPromise(xml);
+//     return json;
+//   } catch (error) {
+//     console.error('Error fetching or converting data:', error);
+//     throw error;
+//   }
+// }
+
+async function fetchArxiv(query, time) {
+  console.log(query, time);
+  try {
+    const apiUrl = `http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query +" "+time)}${time ? "&start=0&max_results=40" : ""}`;
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      return "HTTP error!";
+    }
+    
+    const xml = await response.text();
+    const json = await parseStringPromise(xml);
+    
+    console.log(json?.feed?.entry?.length);
+    
+    if (time) {
+      let parsedDate;
+      if (time.length === 4) parsedDate = new Date(time + '-01-01T00:00:00Z');
+      else if (time.length === 7) parsedDate = new Date(time + '-01T00:00:00Z');
+      else return "Invalid time format";
+      
+      if (!json || !json.feed || !json.feed.entry) return "No relevant data found";
+      
+      const filteredData = json.feed.entry.filter((it) => {
+        const publishedDate = new Date(it.published[0]);
+        return publishedDate >= parsedDate;
+      });
+      
+      console.log(filteredData.length);
+      
+      if (filteredData.length === 0) return "No relevant data found within the specified time";      
+      return filteredData;
+    } else {
+      return json;
+    }
+  } catch (error) {
+    console.error('Error fetching or converting data:', error);
+    return "Something went wrong";
+  }
+}
+
+
+
+
+
+
+const getFormattedDate = () => {
+  const today = new Date();
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+  return today.toLocaleDateString('en-CA', options); // 'en-CA' locale formats date as YYYY-MM-DD
+};
+
 
 async function submitUserMessage(
   content: string,
@@ -407,7 +475,7 @@ async function submitUserMessage(
           // Let's get the text response          
           const newResult = await streamUI({
             model: api(model),
-            initial: <h1>Searching the web...</h1>,
+            initial: <ToolCallLoading concisedQuery={concisedQuery}/>,
             system: `You are a helpful assistant, you extract the relevant data from the given data and try to answer precisely, only share links if asked or required`,
             messages: [
               ...aiState.get().messages
@@ -543,7 +611,93 @@ async function submitUserMessage(
 
           return newResult.value;
         }
-      })
+      }),
+      arxivApiCaller: tool({
+        description: 'A tool for calling arxiv api to search research papers.',
+        parameters: z.object({ 
+          query: z.string().describe('The search query to be included in the arXiv URL parameter'), 
+          time: z.string().describe(`The specific date for which to search results, formatted as a year-month (e.g., 2023-05), or can be empty string if not specified, remember today is ${getFormattedDate()}`)
+        }),        
+        generate: async function* ({ query, time }) {
+          yield <ToolLoadingAnimate searchQuery={query+" "+time} >{"Calling the arvix tool "}</ToolLoadingAnimate>
+          await sleep(1000);
+          const toolCallId = nanoid();
+          const result = await fetchArxiv(query , time);
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolName: 'arxivApiCaller',
+                    toolCallId,
+                    args: { query }
+                  }
+                ]
+              },
+              {
+                id: nanoid(),
+                role: 'tool',
+                content: [
+                  {
+                    type: 'tool-result',
+                    toolName: 'arxivApiCaller',
+                    toolCallId,
+                    result: result
+                  }
+                ]
+              }
+            ]
+          })
+
+          // Let's get the text response          
+          const newResult = await streamUI({
+            model: api(model),
+            initial: <h1>Extracting data...</h1>,
+            system: `You are a helpful assistant, you process the json data and extract the information such as title, published, links, summary`,
+            messages: [
+              ...aiState.get().messages
+            ],
+            text: ({ content, done, delta }) => {
+              if (!textStream) {
+                textStream = createStreamableValue('')
+                textNode = <ArxivToolMessage content={textStream.value} query={query+" "+time} />
+              }
+
+              if (done) {
+                textStream.done()
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'text',
+                          text: content
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } else {
+                textStream.update(delta)
+              }
+              return textNode
+            }
+          })
+          return (
+            newResult.value
+          )
+        },
+      }),
     },
   });
 
