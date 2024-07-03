@@ -2,9 +2,9 @@
 
 'use client';
 import * as React from "react"
-import { Badge } from "../../vercel-ai-rsc/components/ui/badge"
-import { Input } from "../../vercel-ai-rsc/components/ui/input"
-import { Button } from "../../vercel-ai-rsc/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 
 import { useActions, useUIState } from 'ai/rsc';

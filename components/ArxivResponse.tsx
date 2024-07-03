@@ -2,8 +2,8 @@
 "use client"
 
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../vercel-ai-rsc/components/ui/card';
-import { Button } from '../../vercel-ai-rsc/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useGlobalState } from '@/context/GlobalContext';
 
