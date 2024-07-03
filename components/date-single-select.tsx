@@ -16,10 +16,10 @@ export function DateSelect() {
   console.log(selectedDate)
 
   const predefinedRanges = [
-    'last 3 months',
-    'last 6 months',
-    'last 1 year',
-    'last 2 years'
+    'Past 3 months',
+    'Past 6 months',
+    'Past 12 months',
+    'Greater than 12 months'
   ];
 
   const calculatePastDate = (range: string): string => {
