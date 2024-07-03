@@ -30,7 +30,7 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
     event.preventDefault();
     const response = await submitUserMessage(query);
     setMessages(currentMessages => [...currentMessages, response]);
-  } 
+  }
 
   const handleSelect = (category: string) => {
     setSelected(prev => [...prev, category]);
@@ -68,7 +68,7 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
           {filteredCategories.map(category => (
             <div
               key={category}
-              className="cursor-pointer p-2 hover:bg-gray-700"
+              className="cursor-pointer p-2 hover:bg-gray-200"
               onClick={() => handleSelect(category)}
             >
               {category}
