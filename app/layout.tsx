@@ -18,7 +18,7 @@ export const metadata = {
     template: `%s - Diamond GenText`
   },
   description:
-    'Talk to your own personal AI Assistant',
+    'Talk to your own research assistant',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',
