@@ -6,7 +6,7 @@ import { getChat, getMissingKeys } from '@/app/actions'
 import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
 import { Session } from '@/lib/types'
-
+import {useGlobalState} from "../../../../context/GlobalContext";
 export interface ChatPageProps {
   params: {
     id: string
@@ -29,6 +29,8 @@ export async function generateMetadata({
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
+
+
   const session = (await auth()) as Session
   const missingKeys = await getMissingKeys()
 

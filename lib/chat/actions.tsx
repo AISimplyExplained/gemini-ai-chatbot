@@ -1,368 +1,103 @@
-// @ts-nocheck
 import 'server-only'
-import { anthropic } from '@ai-sdk/anthropic';
-import { parseStringPromise } from 'xml2js';
 
-
-import { createOpenAI, openai } from '@ai-sdk/openai'
 import {
   createAI,
   createStreamableUI,
-  createStreamableValue,
-  getAIState,
   getMutableAIState,
-  streamUI
+  getAIState,
+  streamUI,
+  createStreamableValue
 } from 'ai/rsc'
-
-import OpenAI from 'openai'
+import { openai } from '@ai-sdk/openai'
+import { DOMParser } from '@xmldom/xmldom'
 
 import {
+  spinner,
   BotCard,
   BotMessage,
-  Purchase,
-  Stock,
   SystemMessage,
-  spinner
 } from '@/components/stocks'
-
-import { saveChat } from '@/app/actions'
-import { auth } from '@/auth'
-import { Events } from '@/components/stocks/events'
-import { SpinnerMessage, ToolCallLoading, ToolImageLoading, ToolImages, ToolMessage, UserMessage, ToolLoadingAnimate, ArxivToolMessage } from '@/components/stocks/message'
-import { Stocks } from '@/components/stocks/stocks'
-import { Chat } from '@/lib/types'
+import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
+import { z } from 'zod'
+import { CategoryMultiSelect } from '@/components/category-multi-select'
+import { DateSelect } from '@/components/date-single-select'
+import { ArxivResponse } from '@/components/ArxivResponse'
 import {
-  formatNumber,
-  nanoid,
   runAsyncFnWithoutBlocking,
-  sleep
+  sleep,
+  nanoid
 } from '@/lib/utils'
+import { saveChat } from '@/app/actions'
+import { Chat, Message } from '@/lib/types'
+import { auth } from '@/auth'
 
-import { tool } from 'ai';
-import { z } from 'zod';
+function parseXML(xml) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xml, 'text/xml');
 
-async function confirmPurchase(symbol: string, price: number, amount: number) {
-  'use server'
+  const entries = xmlDoc.getElementsByTagName('entry');
+  const results = [];
 
-  const aiState = getMutableAIState<typeof AI>()
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
 
-  const purchasing = createStreamableUI(
-    <div className="inline-flex items-start gap-1 md:items-center">
-      {spinner}
-      <p className="mb-2">
-        Purchasing {amount} ${symbol}...
-      </p>
-    </div>
-  )
+    const id = entry.getElementsByTagName('id')[0].textContent;
+    const updated = entry.getElementsByTagName('updated')[0].textContent;
+    const published = entry.getElementsByTagName('published')[0].textContent;
+    const title = entry.getElementsByTagName('title')[0].textContent.trim();
+    const summary = entry.getElementsByTagName('summary')[0].textContent.trim();
 
-  const systemMessage = createStreamableUI(null)
-
-  runAsyncFnWithoutBlocking(async () => {
-    await sleep(1000)
-
-    purchasing.update(
-      <div className="inline-flex items-start gap-1 md:items-center">
-        {spinner}
-        <p className="mb-2">
-          Purchasing {amount} ${symbol}... working on it...
-        </p>
-      </div>
-    )
-
-    await sleep(1000)
-
-    purchasing.done(
-      <div>
-        <p className="mb-2">
-          You have successfully purchased {amount} ${symbol}. Total cost:{' '}
-          {formatNumber(amount * price)}
-        </p>
-      </div>
-    )
-
-    systemMessage.done(
-      <SystemMessage>
-        You have purchased {amount} shares of {symbol} at ${price}. Total cost ={' '}
-        {formatNumber(amount * price)}.
-      </SystemMessage>
-    )
-
-    aiState.done({
-      ...aiState.get(),
-      messages: [
-        ...aiState.get().messages,
-        {
-          id: nanoid(),
-          role: 'system',
-          content: `[User has purchased ${amount} shares of ${symbol} at ${price}. Total cost = ${
-            amount * price
-          }]`
-        }
-      ]
-    })
-  })
-
-  return {
-    purchasingUI: purchasing.value,
-    newMessage: {
-      id: nanoid(),
-      display: systemMessage.value
+    const authors = [];
+    const authorElements = entry.getElementsByTagName('author');
+    for (let j = 0; j < authorElements.length; j++) {
+      const author = authorElements[j].getElementsByTagName('name')[0].textContent;
+      authors.push(author);
     }
+
+    const links = [];
+    const linkElements = entry.getElementsByTagName('link');
+    for (let k = 0; k < linkElements.length; k++) {
+      const link = {
+        href: linkElements[k].getAttribute('href')?.startsWith('http://') ? linkElements[k].getAttribute('href').replace('http://', 'https://') : linkElements[[k]].getAttribute('href'),
+        rel: linkElements[k].getAttribute('rel')
+      };
+      links.push(link);
+    }
+
+    results.push({
+      id,
+      updated,
+      published,
+      title,
+      summary,
+      authors,
+      links
+    });
   }
-}
-type TextPart = {
-  type: 'text'
-  text: string
-}
+  console.log(results)
 
-type ImagePart = {
-  type: 'image'
-  image: string
+  return results;
 }
 
-type MessageContent = TextPart | ImagePart
-
-type UserMessage = {
-  id: string
-  role: 'user'
-  content: MessageContent[]
-}
-
-type AssistantMessage = {
-  id: string
-  role: 'assistant'
-  content: string
-}
-
-type SystemMessage = {
-  id: string
-  role: 'system'
-  content: string
-}
-
-type Message = UserMessage | AssistantMessage | SystemMessage
-
-async function getWebSearches(query) {
-  const endpoint = "https://api.bing.microsoft.com/v7.0/search";      
-  const urlQuery = encodeURIComponent(query);      
-  const apiKey = process.env.BING_SEARCH_API_KEY
-  const options = {
-    mkt: "en-us",
-    safeSearch: "moderate",
-    textDecorations: true,
-    textFormat: "raw",
-    count: 10,
-    offset: 0,
-  };
-  const queryParams = new URLSearchParams({
-    q: urlQuery,
-    ...options,
-  }).toString();
-
-  const url = `${endpoint}?${queryParams}`;      
-  const headers = {
-    "Ocp-Apim-Subscription-Key": apiKey,
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-  };
-
+async function fetchArxiv(query) {
+  console.log(query)
   try {
-    const response = await fetch(url, { headers });      
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const linksArray = [];
-    const data = await response.json();
-    let resultString : string = `Search Results for "${query}": `;
-    console.log(data.webPages.value)
-
-    if (data.webPages && data.webPages.value) {
-      resultString += "Web Pages result: ";
-      data.webPages.value.forEach((page) => {
-        resultString += `- ${page.name}: ${page.url} ,`;
-        linksArray.push({"link": page.url, "name": page.name})
-        if (page.snippet) resultString += `  Snippet: ${page.snippet} ,`;
-        resultString += ",";
-      });
-    }
-
-    if (data.images && data.images.value) {
-      resultString += "Images result: ";
-      data.images.value.forEach((image) => {
-        resultString += `- ${image.name}: ${image.contentUrl}, `;
-        resultString += `  Thumbnail: ${image.thumbnailUrl},`;
-      });
-    }
-
-    if (data.videos && data.videos.value) {
-      resultString += "Videos result: ";
-      data.videos.value.forEach((video) => {
-        resultString += `- ${video.name}: ${video.contentUrl} ,`;
-        if (video.description)
-          resultString += `  Description: ${video.description} ,`;
-        resultString += `  Thumbnail: ${video.thumbnailUrl}, `;
-      });
-    }
-
-    if (data.news && data.news.value) {
-      resultString += "News result:,";
-      data.news.value.forEach((news) => {
-        resultString += `- ${news.name}: ${news.url},`;
-        if (news.description)
-          resultString += `  Description: ${news.description},`;
-        if (news.image && news.image.thumbnail) {
-          resultString += `  Thumbnail: ${news.image.thumbnail.contentUrl},`;
-        }
-        resultString += ",";
-      });
-    }
-
-    return {resultString, linksArray};
-  } catch (error) {
-    console.error("Error fetching search results:", error);
-    return "Something went wrong. Please try again."
-  }
-}
-
-// async function fetchArxiv(query) {
-//   console.log(query)
-//   try {
-//     const response = await fetch(`http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=10`);
-//     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-//     const xml = await response.text();
-//     const json = await parseStringPromise(xml);
-//     return json;
-//   } catch (error) {
-//     console.error('Error fetching or converting data:', error);
-//     throw error;
-//   }
-// }
-
-async function fetchArxiv(query, time) {
-  console.log(query, time);
-  try {
-    const apiUrl = `http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query +" "+time)}${time ? "&start=0&max_results=40" : ""}`;
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      return "HTTP error!";
-    }
-    
+    const response = await fetch(`https://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=5`);
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     const xml = await response.text();
-    const json = await parseStringPromise(xml);
-    
-    console.log(json?.feed?.entry?.length);
-    
-    if (time) {
-      let parsedDate;
-      if (time.length === 4) parsedDate = new Date(time + '-01-01T00:00:00Z');
-      else if (time.length === 7) parsedDate = new Date(time + '-01T00:00:00Z');
-      else return "Invalid time format";
-      
-      if (!json || !json.feed || !json.feed.entry) return "No relevant data found";
-      
-      const filteredData = json.feed.entry.filter((it) => {
-        const publishedDate = new Date(it.published[0]);
-        return publishedDate >= parsedDate;
-      });
-      
-      console.log(filteredData.length);
-      
-      if (filteredData.length === 0) return "No relevant data found within the specified time";      
-      return filteredData;
-    } else {
-      return json;
-    }
+    const json = parseXML(xml)
+    return json;
   } catch (error) {
     console.error('Error fetching or converting data:', error);
-    return "Something went wrong";
+    throw error;
   }
 }
 
-
-
-
-
-
-const getFormattedDate = () => {
-  const today = new Date();
-  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-  return today.toLocaleDateString('en-CA', options); // 'en-CA' locale formats date as YYYY-MM-DD
-};
-
-
-async function submitUserMessage(
-  content: string,
-  model: string,
-  images?: string[],
-  pdfFiles?: { name: string; text: string }[],
-  csvFiles?: { name: string; text: string }[]
-) {
+async function submitUserMessage(content: string) {
   'use server'
 
-  const openaiOriginal = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
-
-  const groq = createOpenAI({
-    baseURL: 'https://api.groq.com/openai/v1',
-    apiKey: process.env.GROQ_API_KEY
-  })
-  const gemini = createOpenAI({
-    baseURL: 'https://my-openai-gemini-omega-three.vercel.app/v1',
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  })
-  // List of Groq models
-  const groqModels = ['llama3-70b-8192', 'gemma-7b-it', 'mixtral-8x7b-32768']
-  // Determine the API based on the model name
-  const isGeminiModel = model === 'gemini'
-  const isGroqModel = groqModels.includes(model)
-  const isAnthropicModel= model ==='claude-3-5-sonnet-20240620'
-
-  const api = isGroqModel ? groq : isGeminiModel ? gemini : isAnthropicModel ? anthropic : openai
   const aiState = getMutableAIState<typeof AI>()
 
-  // Prepare the message content
-  const messageContent: MessageContent[] = []
-
-  if (content) {
-    messageContent.push({ type: 'text', text: content })
-  }
-
-  if (pdfFiles && pdfFiles.length > 0) {
-    pdfFiles.map(val => {
-      messageContent.push({
-        type: 'text',
-        // To ensure that AI reads this text in PDF formate
-        text:
-          'Treat the below text as pdf. \n' +
-          val.text +
-          '\n here, this Pdf ends.'
-      })
-    })
-  }
-
-  if (images && images.length > 0) {
-    images.forEach(image => {
-      // Remove the base64 header if present
-      const base64Image = image.split(',')[1]
-      messageContent.push({ type: 'image', image: base64Image })
-    })
-  }
-
-  if (csvFiles && csvFiles.length > 0) {
-    csvFiles.forEach(file => {
-      messageContent.push({
-        type: 'text',
-        // To ensure that AI reads this text in CSV formate
-        text:
-          'Treat the below text as csv data \n' +
-          file.text +
-          '\n Csv data ends here.'
-      })
-    })
-  }
-
- 
   aiState.update({
     ...aiState.get(),
     messages: [
@@ -370,7 +105,7 @@ async function submitUserMessage(
       {
         id: nanoid(),
         role: 'user',
-        content: messageContent
+        content
       }
     ]
   })
@@ -379,9 +114,39 @@ async function submitUserMessage(
   let textNode: undefined | React.ReactNode
 
   const result = await streamUI({
-    model: api(model),
+    model: openai('gpt-3.5-turbo'),
     initial: <SpinnerMessage />,
-    system: `You are a helpful assistant`,
+    system: `\
+    You are an arXiv research paper assistant. You can help users find and discuss research papers from various scientific fields.
+    You can ask follow-up questions to clarify the user's request and provide more accurate results.
+
+    If the user mentions a main category (e.g., "Computer Science"), you MUST use the \`show_category_selection\` function to display its subcategories.
+    To do this, follow these steps:
+    1. Identify the main category mentioned by the user.
+    2. Look up the subcategories for that main category in the list below.
+    3. Call show_category_selection with these subcategories, using the main category as the title.
+
+    Here are the main categories and their subcategories:
+
+    Computer Science:
+    - Artificial Intelligence
+    - Computation and Language
+    ...
+
+    Mathematics:
+    - Algebraic Geometry
+    - Algebraic Topology
+    ...
+
+    Physics:
+    - Accelerator Physics
+    - Applied Physics
+    ...
+
+    If you need to ask about a date range, use the \`show_date_range_selection\` function.
+    If you want to display research papers, use the \`show_research_papers\` function.
+
+    Besides that, you can also chat with users and provide information about scientific research and arXiv.`,
     messages: [
       ...aiState.get().messages.map((message: any) => ({
         role: message.role,
@@ -415,128 +180,23 @@ async function submitUserMessage(
       return textNode
     },
     tools: {
-      searchWeb: tool({
-        description: 'A tool for performing web searches.',
-        parameters: z.object({ query: z.string().describe('The query for web search') }),
-        generate: async function* ({ query }) {
-          let concisedQuery = '';
-          try {
-            const completion = await openaiOriginal.chat.completions.create({
-              messages: [
-                { role: "system", content: "You will should receive the query, identify its primary context, and generate a concise and precise query that captures the main intent. For example, if the input query is 'get the latest AI news,' the model should output 'latest AI news." },
-                { role: "user", content: query },
-              ],
-              model: "gpt-3.5-turbo-16k",
-            });
-            concisedQuery = completion?.choices[0]?.message?.content;
-          } catch (error) {
-            console.error("An error occurred:", error);
-          }
-          
-          yield <ToolCallLoading concisedQuery={concisedQuery}/>
-          await sleep(1000);
-          const toolCallId = nanoid();
-          const {resultString, linksArray}  = await getWebSearches(query);
-          const finalToolResult = resultString;
-          const toolCallMeta = {concisedQuery, linksArray}
-
-
-          aiState.done({
-            ...aiState.get(),
-            messages: [
-              ...aiState.get().messages,
-              {
-                id: nanoid(),
-                role: 'assistant',
-                content: [
-                  {
-                    type: 'tool-call',
-                    toolName: 'searchWeb',
-                    toolCallId,
-                    args: { query }
-                  }
-                ]
-              },
-              {
-                id: nanoid(),
-                role: 'tool',
-                content: [
-                  {
-                    type: 'tool-result',
-                    toolName: 'searchWeb',
-                    toolCallId,
-                    result: finalToolResult
-                  }
-                ]
-              }
-            ]
-          })
-
-          // Let's get the text response          
-          const newResult = await streamUI({
-            model: api(model),
-            initial: <ToolCallLoading concisedQuery={concisedQuery}/>,
-            system: `You are a helpful assistant, you extract the relevant data from the given data and try to answer precisely, only share links if asked or required`,
-            messages: [
-              ...aiState.get().messages
-            ],
-            text: ({ content, done, delta }) => {
-              if (!textStream) {
-                textStream = createStreamableValue('')
-                textNode = <ToolMessage content={textStream.value} toolCallMeta={toolCallMeta}/>
-              }
-
-              if (done) {
-                textStream.done()
-                aiState.done({
-                  ...aiState.get(),
-                  messages: [
-                    ...aiState.get().messages,
-                    {
-                      id: nanoid(),
-                      role: 'assistant',
-                      content: [
-                        {
-                          type: 'text',
-                          text: content
-                        }
-                      ]
-                    }
-                  ]
-                })
-              } else {
-                textStream.update(delta)
-              }
-              return textNode
-            }
-          })
-          return (
-            newResult.value
-          )
-        },
-      }),
-      generateImage: tool({
-        description: 'A tool for generating images using DALL·E 3.',
+      show_category_selection: {
+        description: 'Show a UI for the user to select subcategories of research papers.',
         parameters: z.object({
-          prompt: z.string().describe('The prompt for image generation'),
+          categories: z.array(z.string()).describe('List of subcategories to choose from'),
+          title: z.string().describe('The title for the category selection UI (usually the main category name)'),
         }),
-        generate: async function* ({ prompt }) {
-          yield <ToolImageLoading/>
+        generate: async function* ({ categories, title }) {
+          yield (
+            <BotCard>
+              <CategoryMultiSelect categories={categories} />
+            </BotCard>
+          )
+
           await sleep(1000)
+
           const toolCallId = nanoid()
 
-          let imageUrl = ''
-          try {
-            const completion = await openaiOriginal.images.generate({
-              prompt,
-              model: 'dall-e-3',
-            })
-
-            imageUrl = completion?.data?.[0]?.url
-          } catch (error) {
-            console.error('An error occurred:', error)
-          }
-
           aiState.done({
             ...aiState.get(),
             messages: [
@@ -547,9 +207,9 @@ async function submitUserMessage(
                 content: [
                   {
                     type: 'tool-call',
-                    toolName: 'generateImage',
+                    toolName: 'show_category_selection',
                     toolCallId,
-                    args: { prompt }
+                    args: { categories, title }
                   }
                 ]
               },
@@ -559,147 +219,133 @@ async function submitUserMessage(
                 content: [
                   {
                     type: 'tool-result',
-                    toolName: 'generateImage',
+                    toolName: 'show_category_selection',
                     toolCallId,
-                    result: imageUrl
-                  }
-                ]
-              }
-            ]
-          })
-          const newResult = await streamUI({
-            model: api(model),
-            initial: <h1>Generating image...</h1>,
-            system: `You are a helpful assistant. You extract relevant data from the given data and try to answer precisely, only share links if asked or required.`,
-            messages: [
-              ...aiState.get().messages,
-            ],
-            text: ({ content, done, delta }) => {
-              if (!textStream) {
-                textStream = createStreamableValue('');
-                textNode = <ToolImages content={textStream.value}/>
-              }
-        
-              if (done) {
-                textStream.done();
-                aiState.done({
-                  ...aiState.get(),
-                  messages: [
-                    ...aiState.get().messages,
-                    {
-                      id: nanoid(),
-                      role: 'assistant',
-                      content: [
-                        {
-                          type: 'text',
-                          text: content,
-                        },
-                        {
-                          type: 'image',
-                          url: imageUrl,
-                        },
-                      ],
-                    },
-                  ],
-                });
-              } else {
-                textStream.update(delta);
-              }
-              return textNode;
-            },
-          });
-
-          return newResult.value;
-        }
-      }),
-      arxivApiCaller: tool({
-        description: 'A tool for calling arxiv api to search research papers.',
-        parameters: z.object({ 
-          query: z.string().describe('The search query to be included in the arXiv URL parameter'), 
-          time: z.string().describe(`The specific date for which to search results, formatted as a year-month (e.g., 2023-05), or can be empty string if not specified, remember today is ${getFormattedDate()}`)
-        }),        
-        generate: async function* ({ query, time }) {
-          yield <ToolLoadingAnimate searchQuery={query+" "+time} >{"Calling the arvix tool "}</ToolLoadingAnimate>
-          await sleep(1000);
-          const toolCallId = nanoid();
-          const result = await fetchArxiv(query , time);
-
-          aiState.done({
-            ...aiState.get(),
-            messages: [
-              ...aiState.get().messages,
-              {
-                id: nanoid(),
-                role: 'assistant',
-                content: [
-                  {
-                    type: 'tool-call',
-                    toolName: 'arxivApiCaller',
-                    toolCallId,
-                    args: { query }
-                  }
-                ]
-              },
-              {
-                id: nanoid(),
-                role: 'tool',
-                content: [
-                  {
-                    type: 'tool-result',
-                    toolName: 'arxivApiCaller',
-                    toolCallId,
-                    result: result
+                    result: { categories, title }
                   }
                 ]
               }
             ]
           })
 
-          // Let's get the text response          
-          const newResult = await streamUI({
-            model: api(model),
-            initial: <h1>Extracting data...</h1>,
-            system: `You are a helpful assistant, you process the json data and extract the information such as title, published, links, summary`,
-            messages: [
-              ...aiState.get().messages
-            ],
-            text: ({ content, done, delta }) => {
-              if (!textStream) {
-                textStream = createStreamableValue('')
-                textNode = <ArxivToolMessage content={textStream.value} query={query+" "+time} />
-              }
-
-              if (done) {
-                textStream.done()
-                aiState.done({
-                  ...aiState.get(),
-                  messages: [
-                    ...aiState.get().messages,
-                    {
-                      id: nanoid(),
-                      role: 'assistant',
-                      content: [
-                        {
-                          type: 'text',
-                          text: content
-                        }
-                      ]
-                    }
-                  ]
-                })
-              } else {
-                textStream.update(delta)
-              }
-              return textNode
-            }
-          })
           return (
-            newResult.value
+            <BotCard>
+              <CategoryMultiSelect categories={categories} />
+            </BotCard>
           )
-        },
-      }),
-    },
-  });
+        }
+      },
+      show_date_range_selection: {
+        description: 'Show a UI for the user to select a date range for research papers.',
+        parameters: z.object({}),
+        generate: async function* () {
+          yield (
+            <BotCard>
+              <DateSelect />
+            </BotCard>
+          )
+
+          await sleep(1000)
+
+          const toolCallId = nanoid()
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolName: 'show_date_range_selection',
+                    toolCallId,
+                    args: {}
+                  }
+                ]
+              },
+              {
+                id: nanoid(),
+                role: 'tool',
+                content: [
+                  {
+                    type: 'tool-result',
+                    toolName: 'show_date_range_selection',
+                    toolCallId,
+                    result: {}
+                  }
+                ]
+              }
+            ]
+          })
+
+          return (
+            <BotCard>
+              <DateSelect />
+            </BotCard>
+          )
+        }
+      },
+      show_research_papers: {
+        description: 'A tool for calling arxiv api to search research papers.',
+        parameters: z.object({
+          query: z.string().describe('The search query to be included in the arXiv URL parameter'),
+          time: z.string().describe(`The specific date for which to search results, formatted as a year-month (e.g., 2023-05), or can be empty string if not specified`)
+        }),
+        generate: async function* ({ query, time }) {
+          yield (
+            <BotCard>
+              <ArxivResponse loading={true} />
+            </BotCard>
+          )
+
+          await sleep(1000)
+
+          const papers = await fetchArxiv(query + " " + time)
+
+          const toolCallId = nanoid()
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolName: 'show_research_papers',
+                    toolCallId,
+                    args: { query, time }
+                  }
+                ]
+              },
+              {
+                id: nanoid(),
+                role: 'tool',
+                content: [
+                  {
+                    type: 'tool-result',
+                    toolName: 'show_research_papers',
+                    toolCallId,
+                    result: papers
+                  }
+                ]
+              }
+            ]
+          })
+
+          return (
+            <BotCard>
+              <ArxivResponse papers={papers} />
+            </BotCard>
+          )
+        }
+      }
+    }
+  })
 
   return {
     id: nanoid(),
@@ -719,8 +365,7 @@ export type UIState = {
 
 export const AI = createAI<AIState, UIState>({
   actions: {
-    submitUserMessage,
-    confirmPurchase
+    submitUserMessage
   },
   initialUIState: [],
   initialAIState: { chatId: nanoid(), messages: [] },
@@ -730,7 +375,7 @@ export const AI = createAI<AIState, UIState>({
     const session = await auth()
 
     if (session && session.user) {
-      const aiState = getAIState()
+      const aiState = getAIState() as Chat
 
       if (aiState) {
         const uiState = getUIStateFromAIState(aiState)
@@ -779,26 +424,17 @@ export const getUIStateFromAIState = (aiState: Chat) => {
       display:
         message.role === 'tool' ? (
           message.content.map(tool => {
-            return tool.toolName === 'listStocks' ? (
+            return tool.toolName === 'show_category_selection' ? (
               <BotCard>
-                {/* TODO: Infer types based on the tool result*/}
-                {/* @ts-expect-error */}
-                <Stocks props={tool.result} />
+                <CategoryMultiSelect categories={tool.result.categories} />
               </BotCard>
-            ) : tool.toolName === 'showStockPrice' ? (
+            ) : tool.toolName === 'show_date_range_selection' ? (
               <BotCard>
-                {/* @ts-expect-error */}
-                <Stock props={tool.result} />
+                <DateSelect />
               </BotCard>
-            ) : tool.toolName === 'showStockPurchase' ? (
+            ) : tool.toolName === 'show_research_papers' ? (
               <BotCard>
-                {/* @ts-expect-error */}
-                <Purchase props={tool.result} />
-              </BotCard>
-            ) : tool.toolName === 'getEvents' ? (
-              <BotCard>
-                {/* @ts-expect-error */}
-                <Events props={tool.result} />
+                <ArxivResponse papers={tool.result} />
               </BotCard>
             ) : null
           })
