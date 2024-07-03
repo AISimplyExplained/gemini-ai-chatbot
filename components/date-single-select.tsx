@@ -1,10 +1,10 @@
 'use client';
 
 import * as React from "react"
-import { Button } from "../../vercel-ai-rsc/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { useActions, useUIState } from 'ai/rsc';
 
-import type { AI } from '../../vercel-ai-rsc/app/action';
+import type { AI } from '@/lib/chat/actions';
 
 export function DateSelect() {
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
