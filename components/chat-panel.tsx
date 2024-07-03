@@ -42,17 +42,17 @@ export function ChatPanel({
 
     const exampleMessages = [
         {
-            heading: 'Brainstorm a concept',
+            heading: 'Impact of artificial intelligence on higher education',
             subheading: '',
             message: ``
         },
         {
-            heading: 'Analyze a dataset',
+            heading: 'Canadian demographics consuming digital media',
             subheading: '',
             message: ''
         },
         {
-            heading: 'Summarise an Article',
+            heading: 'New marketing segments from immigrants to Canada',
             subheading: '',
             message: ''
         }
