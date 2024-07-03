@@ -10,8 +10,6 @@ import { useGlobalState } from '@/context/GlobalContext';
 export const ArxivResponse = ({ papers }) => {
 
   const {selectedPdfUrl, setSelectedPdfUrl} = useGlobalState();
-  console.log(selectedPdfUrl)
-  console.log
 
   return (
     <div>
@@ -20,9 +18,9 @@ export const ArxivResponse = ({ papers }) => {
           <CardHeader>
             <CardTitle>{paper.title}</CardTitle>
             <CardDescription>{paper.authors.join(', ')}</CardDescription>
-          </CardHeader>
+            {/* <CardDescription>{paper.published.substring(0, 10)}</CardDescription> */}
+            </CardHeader>
           <CardContent>
-            <p><strong>Category:</strong> {paper.category}</p>
             <p>{paper.summary}</p>
           </CardContent>
           <CardFooter className='flex gap-2'>

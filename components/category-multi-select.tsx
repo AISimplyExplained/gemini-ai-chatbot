@@ -5,11 +5,11 @@ import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { X, Check } from "lucide-react"
 
 import { useActions, useUIState } from 'ai/rsc';
-
 import type { AI } from '../../vercel-ai-rsc/app/action';
+
 interface MultiSelectProps {
   categories: string[];
 }
@@ -19,14 +19,14 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
   const { submitUserMessage } = useActions<typeof AI>();
   const [selected, setSelected] = React.useState<string[]>([]);
   const [inputValue, setInputValue] = React.useState('');
+  const [customCategory, setCustomCategory] = React.useState('');
 
   const filteredCategories = categories.filter(
     category => !selected.includes(category) && category.toLowerCase().includes(inputValue.toLowerCase())
   );
 
-
-  const query = `the selected category is ${selected.toString()}, now call the show_date_range_selection function to ask for date`
-  const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement> ) => {
+  const query = `the selected category is ${selected.toString()}, now call the show_date_range_selection function to ask for date`;
+  const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const response = await submitUserMessage(query);
     setMessages(currentMessages => [...currentMessages, response]);
@@ -39,6 +39,13 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
 
   const handleRemove = (category: string) => {
     setSelected(prev => prev.filter(item => item !== category));
+  };
+
+  const handleAddCustomCategory = () => {
+    if (customCategory && !selected.includes(customCategory)) {
+      setSelected(prev => [...prev, customCategory]);
+      setCustomCategory('');
+    }
   };
 
   return (
@@ -58,12 +65,26 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
             </Badge>
           ))}
         </div>
-        <Input
-          type="text"
-          placeholder="Search categories..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-        />
+        <div className="flex gap-2 items-center">
+          <Input
+            type="text"
+            placeholder="Search categories..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+          />
+          <Input
+            type="text"
+            placeholder="Add category..."
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+          />
+          <div 
+            onClick={handleAddCustomCategory}
+            className="cursor-pointer border border-gray-100 rounded-lg p-[8px] transition duration-200 hover:border-black active:border-gray-200"
+          >
+            <Check strokeWidth={1} size={20} />
+          </div>
+        </div>
         <div className="mt-2 max-h-60 overflow-auto">
           {filteredCategories.map(category => (
             <div
@@ -77,7 +98,7 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
         </div>
       </div>
       <input type="hidden" name="selected_categories" value={selected.join(',')} />
-      <Button onClick={(event) =>  handleSubmit(event)} className="mt-4">Submit</Button>
+      <Button onClick={handleSubmit} className="mt-4">Submit</Button>
     </form>
   );
 }

@@ -75,8 +75,6 @@ function parseXML(xml) {
       links
     });
   }
-  console.log(results)
-
   return results;
 }
 

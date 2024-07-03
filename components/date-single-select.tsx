@@ -2,14 +2,18 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useActions, useUIState } from 'ai/rsc';
 
 import type { AI } from '@/lib/chat/actions';
 
 export function DateSelect() {
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
+  // const [customDate, setCustomDate] = React.useState<string>('');
   const [, setMessages] = useUIState<typeof AI>();
   const { submitUserMessage } = useActions<typeof AI>();
+
+  console.log(selectedDate)
 
   const predefinedRanges = [
     'last 3 months',
@@ -34,16 +38,26 @@ export function DateSelect() {
     }
   };
 
-  const query = `the selected date is ${selectedDate}, now display the research papers`
-  const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement> ) => {
+  const query = `the selected date is ${selectedDate}, now display the research papers`;
+  const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const response = await submitUserMessage(query);
     setMessages(currentMessages => [...currentMessages, response]);
-  }
+  };
 
   const handleSelect = (range: string) => {
     setSelectedDate(calculatePastDate(range));
   };
+
+  // const handleCustomDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const date = e.target.value;
+  //   if (/^\d{4}-(0[1-9]|1[0-2])$/.test(date)) {
+  //     setSelectedDate(date);
+  //   } else {
+  //     setSelectedDate(null); // Reset if the format is incorrect
+  //   }
+  //   setCustomDate(date);
+  // };
 
   return (
     <form>
@@ -52,12 +66,20 @@ export function DateSelect() {
           {predefinedRanges.map(range => (
             <div
               key={range}
-              className={`cursor-pointer p-2 hover:bg-gray-200 border rounded-lg ${selectedDate === calculatePastDate(range) ? 'border-gray-300' : ''}`}
+              className={`m-1 cursor-pointer p-2 hover:bg-gray-200 border rounded-lg ${selectedDate == calculatePastDate(range) ? 'bg-gray-200' : ''}`}
               onClick={() => handleSelect(range)}
             >
               {range}
             </div>
           ))}
+          {/* <div className="mt-4">
+            <Input
+              type="month"
+              placeholder="YYYY-MM"
+              value={customDate}
+              onChange={handleCustomDateChange}
+            />
+          </div> */}
         </div>
       </div>
       <input type="hidden" name="selected_date" value={selectedDate || ''} />
