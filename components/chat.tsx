@@ -13,7 +13,7 @@ import { Message, Session } from '@/lib/types'
 import { usePathname, useRouter } from 'next/navigation'
 import { useScrollAnchor } from '@/lib/hooks/use-scroll-anchor'
 import { toast } from 'sonner'
-import { Card } from '../../vercel-ai-rsc/components/ui/card'
+import { Card } from '@components/ui/card'
 import { useGlobalState } from '@/context/GlobalContext'
 import {X} from 'lucide-react'
 
