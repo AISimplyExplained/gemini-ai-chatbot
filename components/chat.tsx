@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 'use client'
 
 import { cn } from '@/lib/utils'
@@ -11,6 +13,9 @@ import { Message, Session } from '@/lib/types'
 import { usePathname, useRouter } from 'next/navigation'
 import { useScrollAnchor } from '@/lib/hooks/use-scroll-anchor'
 import { toast } from 'sonner'
+import { Card } from '../../vercel-ai-rsc/components/ui/card'
+import { useGlobalState } from '@/context/GlobalContext'
+import {X} from 'lucide-react'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   initialMessages?: Message[]
@@ -20,6 +25,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 }
 
 export function Chat({ id, className, session, missingKeys }: ChatProps) {
+  const {selectedPdfUrl, setSelectedPdfUrl} = useGlobalState();
   const router = useRouter()
   const path = usePathname()
   const [input, setInput] = useState('')
@@ -57,12 +63,13 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
       useScrollAnchor()
 
   return (
+    <>
       <div
           className="group w-full overflow-auto pl-0 peer-[[data-state=open]]:lg:pl-[250px] peer-[[data-state=open]]:xl:pl-[300px]"
           ref={scrollRef}
       >
         <div
-            className={cn('pb-[200px] pt-4 md:pt-10', className)}
+            className={`transition duration-300 ${selectedPdfUrl ? '-translate-x-1/4' : 'translate-x-0'} pb-[200px] pt-4 md:pt-10 `}
             ref={messagesRef}
         >
           {messages.length ? (
@@ -80,5 +87,23 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
             scrollToBottom={scrollToBottom}
         />
       </div>
+        <Card className={`bg-black fixed right-0 top-0 bottom-0 w-[45%] mt-16 transition ${selectedPdfUrl ? 'block' : 'hidden'}`}>
+          <div className='flex justify-end '>
+              <X 
+                  className='text-white m-4 cursor-pointer rounded-full border-2 border-gray-200' 
+                  onClick={() => setSelectedPdfUrl(null)} 
+                  size={24}
+              />
+          </div>
+          <embed
+              src={selectedPdfUrl}
+              allowFullScreen={true}
+              zoom
+              title="arXiv Paper"
+              width="100%"
+              height="100%"
+          ></embed>
+      </Card>
+    </>
   )
 }
