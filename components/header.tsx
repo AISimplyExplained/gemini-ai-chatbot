@@ -38,7 +38,8 @@ async function UserOrLogin() {
         {session?.user ? (
           <UserMenu user={session.user} />
         ) : (
-            <ModelSelector/>
+            <div></div>
+            // <ModelSelector/>
         )}
       </div>
     </>
