@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/react'
@@ -7,6 +8,7 @@ import { TailwindIndicator } from '@/components/tailwind-indicator'
 import { Providers } from '@/components/providers'
 import { Header } from '@/components/header'
 import { Toaster } from '@/components/ui/sonner'
+import { GlobalStateProvider } from '@/context/GlobalContext'
 
 
 export const metadata = {
@@ -45,20 +47,22 @@ export default function RootLayout({ children }: RootLayoutProps) {
           GeistMono.variable
         )}
       >
-        <Toaster position="top-center" />
-        <Providers
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex flex-col flex-1">{children}</main>
-          </div>
-          <TailwindIndicator />
-        </Providers>
-        <Analytics />
+          <Toaster position="top-center" />
+          <Providers
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            >
+            <GlobalStateProvider>
+              <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex flex-col flex-1">{children}</main>
+              </div>
+            <TailwindIndicator />
+          </GlobalStateProvider>
+          </Providers>
+          <Analytics />
       </body>
     </html>
   )

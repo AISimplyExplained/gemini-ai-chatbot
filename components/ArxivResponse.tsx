@@ -8,7 +8,10 @@ import { X } from 'lucide-react';
 import { useGlobalState } from '@/context/GlobalContext';
 
 export const ArxivResponse = ({ papers }) => {
+
   const {selectedPdfUrl, setSelectedPdfUrl} = useGlobalState();
+  console.log(selectedPdfUrl)
+  console.log
 
   return (
     <div>

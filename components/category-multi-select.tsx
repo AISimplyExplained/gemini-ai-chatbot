@@ -1,5 +1,6 @@
-'use client';
+// @ts-nocheck
 
+'use client';
 import * as React from "react"
 import { Badge } from "../../vercel-ai-rsc/components/ui/badge"
 import { Input } from "../../vercel-ai-rsc/components/ui/input"

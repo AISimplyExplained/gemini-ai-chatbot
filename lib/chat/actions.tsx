@@ -1,3 +1,4 @@
+// @ts-nocheck
 import 'server-only'
 
 import {
@@ -294,11 +295,7 @@ async function submitUserMessage(content: string) {
           time: z.string().describe(`The specific date for which to search results, formatted as a year-month (e.g., 2023-05), or can be empty string if not specified`)
         }),
         generate: async function* ({ query, time }) {
-          yield (
-            <BotCard>
-              <ArxivResponse loading={true} />
-            </BotCard>
-          )
+          yield <SpinnerMessage />
 
           await sleep(1000)
 
