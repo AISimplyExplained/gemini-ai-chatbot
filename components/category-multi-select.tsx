@@ -2,9 +2,9 @@
 
 'use client';
 import * as React from "react"
-import { Badge } from "../../vercel-ai-rsc/components/ui/badge"
-import { Input } from "../../vercel-ai-rsc/components/ui/input"
-import { Button } from "../../vercel-ai-rsc/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 
 import { useActions, useUIState } from 'ai/rsc';
@@ -30,7 +30,7 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
     event.preventDefault();
     const response = await submitUserMessage(query);
     setMessages(currentMessages => [...currentMessages, response]);
-  } 
+  }
 
   const handleSelect = (category: string) => {
     setSelected(prev => [...prev, category]);
@@ -68,7 +68,7 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
           {filteredCategories.map(category => (
             <div
               key={category}
-              className="cursor-pointer p-2 hover:bg-gray-700"
+              className="cursor-pointer p-2 hover:bg-gray-200"
               onClick={() => handleSelect(category)}
             >
               {category}

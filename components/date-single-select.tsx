@@ -1,16 +1,16 @@
 'use client';
 
 import * as React from "react"
-import { Button } from "../../vercel-ai-rsc/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { useActions, useUIState } from 'ai/rsc';
 
-import type { AI } from '../../vercel-ai-rsc/app/action';
+import type { AI } from '@/lib/chat/actions';
 
 export function DateSelect() {
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
   const [, setMessages] = useUIState<typeof AI>();
   const { submitUserMessage } = useActions<typeof AI>();
-  
+
   const predefinedRanges = [
     'last 3 months',
     'last 6 months',
@@ -22,7 +22,7 @@ export function DateSelect() {
     const today = new Date();
     switch (range) {
       case 'last 3 months':
-        return new Date(today.setMonth(today.getMonth() - 3)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit'});
+        return new Date(today.setMonth(today.getMonth() - 3)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit' });
       case 'last 6 months':
         return new Date(today.setMonth(today.getMonth() - 6)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit' });
       case 'last 1 year':
@@ -34,12 +34,12 @@ export function DateSelect() {
     }
   };
 
-  const query = `the selected date is ${selectedDate}, now display the researh papers`
+  const query = `the selected date is ${selectedDate}, now display the research papers`
   const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement> ) => {
     event.preventDefault();
     const response = await submitUserMessage(query);
     setMessages(currentMessages => [...currentMessages, response]);
-  } 
+  }
 
   const handleSelect = (range: string) => {
     setSelectedDate(calculatePastDate(range));
@@ -52,7 +52,7 @@ export function DateSelect() {
           {predefinedRanges.map(range => (
             <div
               key={range}
-              className={`cursor-pointer p-2 hover:bg-gray-900 border rounded-lg ${selectedDate === calculatePastDate(range) ? 'border-gray-300' : ''}`}
+              className={`cursor-pointer p-2 hover:bg-gray-200 border rounded-lg ${selectedDate === calculatePastDate(range) ? 'border-gray-300' : ''}`}
               onClick={() => handleSelect(range)}
             >
               {range}
@@ -61,7 +61,7 @@ export function DateSelect() {
         </div>
       </div>
       <input type="hidden" name="selected_date" value={selectedDate || ''} />
-      <Button disabled={selectedDate ? false:  true} onClick={handleSubmit} className="mt-4">Submit</Button>
+      <Button disabled={!selectedDate} onClick={handleSubmit} className="mt-4">Submit</Button>
     </form>
   );
 }
