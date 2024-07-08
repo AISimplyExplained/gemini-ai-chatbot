@@ -748,8 +748,46 @@ const IconsDocument = () => {
     </svg>
   )
 }
+function IconsMicrosoft({ className, ...props }: React.ComponentProps<'svg'>) {
+  return (
+    <svg
+      role="img"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn('size-4', className)}
+      {...props}
+    >
+      <title>Microsoft</title>
+      <rect x="0" y="0" width="11" height="11" fill="#F25022" />  {/* Red */}
+      <rect x="13" y="0" width="11" height="11" fill="#7FBA00" />  {/* Green */}
+      <rect x="0" y="13" width="11" height="11" fill="#00A4EF" />  {/* Blue */}
+      <rect x="13" y="13" width="11" height="11" fill="#FFB900" /> {/* Yellow */}
+    </svg>
+  )
+}
+
+function IconsMicrosoftAzure({ className, ...props }: React.ComponentProps<'svg'>) {
+  return (
+    <svg
+      role="img"
+      viewBox="0 0 512 512"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      className={cn('size-4', className)}
+      {...props}
+    >
+      <title>Microsoft Azure</title>
+      <path fill="#0089D6" d="M184.727 17.455l-168.727 314.909h97.445l92.472 161.182 186.618-189.927-208.436-286.164z" />
+      <path fill="#0089D6" d="M367.273 494.545h-159.273l128.727-128.727h124.727l-94.181 128.727z" />
+      <path fill="#0089D6" d="M451.273 348.364l-208.436-286.164 41.963-42.2 208.436 286.164z" />
+    </svg>
+  );
+}
+
 
 export {
+  IconsMicrosoftAzure,
+  IconsMicrosoft,
   IconEdit,
   IconNextChat,
   IconGemini,
