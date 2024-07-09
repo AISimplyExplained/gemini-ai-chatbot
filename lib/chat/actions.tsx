@@ -175,7 +175,6 @@ async function getWebSearches(query) {
     const linksArray = [];
     const data = await response.json();
     let resultString : string = `Search Results for "${query}": `;
-    console.log(data.webPages.value)
 
     if (data.webPages && data.webPages.value) {
       resultString += "Web Pages result: ";
@@ -251,8 +250,6 @@ async function fetchArxiv(query, time) {
     
     const xml = await response.text();
     const json = await parseStringPromise(xml);
-    
-    console.log(json?.feed?.entry?.length);
     
     if (time) {
       let parsedDate;
@@ -747,13 +744,12 @@ export const AI = createAI<AIState, UIState>({
 
     if (session && session.user) {
       const { chatId, messages } = state
-
       const createdAt = new Date()
       const userId = session.user.id as string
       const path = `/chat/${chatId}`
-
-      const firstMessageContent = messages[0].content as string
-      const title = firstMessageContent.substring(0, 100)
+      const firstMessageContent = messages[0].content
+      const title = firstMessageContent[0].text.substring(0, 100)
+      // const title = 'firstMessageContent.substring(0, 100)'
 
       const chat: Chat = {
         id: chatId,
@@ -781,32 +777,32 @@ export const getUIStateFromAIState = (aiState: Chat) => {
           message.content.map(tool => {
             return tool.toolName === 'listStocks' ? (
               <BotCard>
-                {/* TODO: Infer types based on the tool result*/}
-                {/* @ts-expect-error */}
                 <Stocks props={tool.result} />
               </BotCard>
             ) : tool.toolName === 'showStockPrice' ? (
               <BotCard>
-                {/* @ts-expect-error */}
                 <Stock props={tool.result} />
               </BotCard>
             ) : tool.toolName === 'showStockPurchase' ? (
               <BotCard>
-                {/* @ts-expect-error */}
                 <Purchase props={tool.result} />
               </BotCard>
             ) : tool.toolName === 'getEvents' ? (
               <BotCard>
-                {/* @ts-expect-error */}
                 <Events props={tool.result} />
               </BotCard>
             ) : null
           })
         ) : message.role === 'user' ? (
-          <UserMessage>{message.content as string}</UserMessage>
-        ) : message.role === 'assistant' &&
+          <UserMessage>{message?.content[0]?.text as string}</UserMessage>
+        ) : message.role === 'assistant' ? (
           typeof message.content === 'string' ? (
-          <BotMessage content={message.content} />
+            <BotMessage content={message.content} />
+          ) : typeof message.content === 'object' && message?.content[0]?.type === 'text' ? (
+            <BotCard>
+              <BotMessage content={message.content[0].text} />
+            </BotCard>
+          ) : null
         ) : null
     }))
 }

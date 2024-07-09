@@ -37,6 +37,7 @@ export async function getChat(id: string, userId: string) {
     return null
   }
 
+  // console.log('getchat: ', chat.messages.map(c => c.content))
   return chat
 }
 
@@ -129,6 +130,7 @@ export async function shareChat(id: string) {
 }
 
 export async function saveChat(chat: Chat) {
+  // console.log('chat: ', chat.messages.map(c => c.content))
   const session = await auth()
 
   if (session && session.user) {
