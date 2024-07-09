@@ -57,17 +57,17 @@ export const {
   ],
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt'},
-  cookies: {
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: false, // Set to true in production
-        domain: 'localhost',
-      },
-    },
+  // cookies: {
+    // csrfToken: {
+    //   name: `next-auth.csrf-token`,
+    //   options: {
+    //     httpOnly: true,
+    //     sameSite: 'lax',
+    //     path: '/',
+    //     secure: false, // Set to true in production
+    //     domain: 'localhost',
+    //   },
+    // },
     // callbackUrl: {
     //   name: `next-auth.callback-url`,
     //   options: {
@@ -88,12 +88,16 @@ export const {
     //     domain: 'localhost',
     //   },
     // },
-  },
+  // },
   callbacks: {
-    async jwt({ token }) {
+    async jwt({ token, user }) {
+      if(user){
+        token.user = user;
+      }
       return token;
     },
-    async session({session}){
+    async session({session, token}){
+      if(token) session.user = token.user;
       return session;
     }
   },

@@ -184,7 +184,7 @@ export function ToolMessage({
       </div>
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
         {
-          toolCallMeta.concisedQuery && toolCallMeta.concisedQuery.length > 0 && (
+          toolCallMeta && toolCallMeta.concisedQuery && toolCallMeta.concisedQuery.length > 0 && (
             <>
               <Accordion type="single" collapsible>
                 <AccordionItem value="item-1">
