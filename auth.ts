@@ -57,7 +57,7 @@ export const {
   ],
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt'},
-  // cookies: {
+  cookies: {
     // csrfToken: {
     //   name: `next-auth.csrf-token`,
     //   options: {
@@ -78,17 +78,17 @@ export const {
     //     domain: 'localhost',
     //   },
     // },
-    // sessionToken: {
-    //   name: `next-auth.session-token`,
-    //   options: {
-    //     httpOnly: true,
-    //     sameSite: 'lax',
-    //     path: '/',
-    //     secure: false, // Set to true in production
-    //     domain: 'localhost',
-    //   },
-    // },
-  // },
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        domain: process.env.COOKIE_DOMAIN,
+      },
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if(user){
