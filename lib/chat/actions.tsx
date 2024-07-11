@@ -38,7 +38,7 @@ import {
   sleep
 } from '@/lib/utils'
 
-import { tool } from 'ai';
+import { generateText, tool } from 'ai';
 import { z } from 'zod';
 
 async function confirmPurchase(symbol: string, price: number, amount: number) {
@@ -417,15 +417,14 @@ async function submitUserMessage(
         parameters: z.object({ query: z.string().describe('The query for web search') }),
         generate: async function* ({ query }) {
           let concisedQuery = '';
+
           try {
-            const completion = await openaiOriginal.chat.completions.create({
-              messages: [
-                { role: "system", content: "You will should receive the query, identify its primary context, and generate a concise and precise query that captures the main intent. For example, if the input query is 'get the latest AI news,' the model should output 'latest AI news." },
-                { role: "user", content: query },
-              ],
-              model: "gpt-3.5-turbo-16k",
+            const { text, finishReason, usage } = await generateText({
+              system: 'You will should receive the query, identify its primary context, and generate a concise and precise query that captures the main intent. For example, if the input query is get the latest AI news, the model should output latest AI news.',
+              model: openai('gpt-3.5-turbo'),
+              prompt: query,
             });
-            concisedQuery = completion?.choices[0]?.message?.content;
+            concisedQuery = text;
           } catch (error) {
             console.error("An error occurred:", error);
           }
@@ -495,7 +494,9 @@ async function submitUserMessage(
                       content: [
                         {
                           type: 'text',
-                          text: content
+                          text: content,
+                          meta: toolCallMeta,
+                          toolName: 'searchWeb'
                         }
                       ]
                     }
@@ -678,7 +679,9 @@ async function submitUserMessage(
                       content: [
                         {
                           type: 'text',
-                          text: content
+                          text: content,
+                          toolName : 'arxivApiCaller',
+                          meta: `${query} ${time}`
                         }
                       ]
                     }
@@ -768,6 +771,12 @@ export const AI = createAI<AIState, UIState>({
 })
 
 export const getUIStateFromAIState = (aiState: Chat) => {
+  // aiState.messages.map(m => {
+  //   console.log(m.role)
+  //   console.log(m.content)
+  //   console.log('----------------------------')
+  // })
+
   return aiState.messages
     .filter(message => message.role !== 'system')
     .map((message, index) => ({
@@ -793,16 +802,25 @@ export const getUIStateFromAIState = (aiState: Chat) => {
               </BotCard>
             ) : null
           })
-        ) : message.role === 'user' ? (
+        ) 
+        : message.role === 'user' ? (
           <UserMessage>{message?.content[0]?.text as string}</UserMessage>
-        ) : message.role === 'assistant' ? (
-          typeof message.content === 'string' ? (
-            <BotMessage content={message.content} />
-          ) : typeof message.content === 'object' && message?.content[0]?.type === 'text' ? (
-            <BotCard>
-              <BotMessage content={message.content[0].text} />
-            </BotCard>
-          ) : null
+        ) 
+        : message.role === 'assistant' ? (
+              typeof message.content === 'string' ? (
+                <BotMessage content={message.content} />
+              ) : (
+                typeof message.content === 'object' &&
+                (message.content[0]?.toolName === 'searchWeb' ? (
+                  <BotCard>
+                    <ToolMessage content={message.content[0].text} toolCallMeta={message.content[0].meta} />
+                  </BotCard>
+                ) : message.content[0]?.toolName === 'arxivApiCaller' ? (
+                  <BotCard>
+                    <ArxivToolMessage content={message?.content[0]?.text} query={message.content[0].meta} />
+                  </BotCard>
+                ) : null)
+              )
         ) : null
     }))
 }
