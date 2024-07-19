@@ -44,6 +44,13 @@ export function ModelSelector() {
                             GPT 3.5
                         </SelectItem>
                         <SelectItem
+                            value="gpt-4o-mini"
+                            onMouseEnter={(e) => handleMouseEnter('Balanced, small, excellent for general use', e)}
+                            onMouseLeave={() => setTooltipContent('')}
+                        >
+                            GPT-4o Mini
+                        </SelectItem>
+                        <SelectItem
                             value="gpt-4"
                             onMouseEnter={(e) => handleMouseEnter('Highly creative, detailed responses', e)}
                             onMouseLeave={() => setTooltipContent('')}

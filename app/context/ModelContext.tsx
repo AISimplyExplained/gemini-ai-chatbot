@@ -10,7 +10,7 @@ interface ModelContextType {
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 
 export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [model, setModel] = useState<string>('gpt-4o-2024-05-13');  // Default model
+    const [model, setModel] = useState<string>('gpt-4o-mini');  // Default model
 
     return (
         <ModelContext.Provider value={{ model, setModel }}>
