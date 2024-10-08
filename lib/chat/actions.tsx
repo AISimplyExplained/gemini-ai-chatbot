@@ -379,6 +379,7 @@ async function submitUserMessage(
   const result = await streamUI({
     model: api(model),
     initial: <SpinnerMessage />,
+    temperature: isSimpleModel ? 1 : 0.7,
     system: isSimpleModel ? undefined : `You are a helpful assistant`,
     messages: [
       ...aiState.get().messages.map((message: any) => ({
