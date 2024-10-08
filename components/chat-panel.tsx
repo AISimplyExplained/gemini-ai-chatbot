@@ -12,6 +12,7 @@ import { nanoid } from 'nanoid'
 import { UserMessage } from './stocks/message'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Session } from '@/lib/types'
 
 export interface ChatPanelProps {
     id?: string
@@ -20,6 +21,7 @@ export interface ChatPanelProps {
     setInput: (value: string) => void
     isAtBottom: boolean
     scrollToBottom: () => void
+    session?: Session
 }
 
 export function ChatPanel({
@@ -28,7 +30,8 @@ export function ChatPanel({
                               input,
                               setInput,
                               isAtBottom,
-                              scrollToBottom
+                              scrollToBottom,
+                              session
                           }: ChatPanelProps) {
     const [aiState] = useAIState()
     const [messages, setMessages] = useUIState<typeof AI>()
@@ -121,7 +124,7 @@ export function ChatPanel({
                 ) : null}
 
                 <div className="grid gap-4 sm:pb-4">
-                    <PromptForm input={input} setInput={setInput} />
+                    <PromptForm session={session} input={input} setInput={setInput} />
                     <FooterText className="hidden sm:block" />
                 </div>
             </div>
