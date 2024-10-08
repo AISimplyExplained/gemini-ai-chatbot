@@ -287,7 +287,9 @@ export function PromptForm({
   const canUploadAttachments = [
     'gpt-4',
     'gpt-4-turbo',
-    'gpt-4o-2024-05-13'
+    'gpt-4o-2024-05-13',
+    'o1-preview	',
+    'o1-mini'
   ].includes(model)
 
   return (
