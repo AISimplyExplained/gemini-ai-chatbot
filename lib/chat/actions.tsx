@@ -378,7 +378,7 @@ async function submitUserMessage(
   const result = await streamUI({
     model: api(model),
     initial: <SpinnerMessage />,
-    system: `You are a helpful assistant`,
+    system: ['o1-preview', 'o1-mini'].includes(model) ? undefined : `You are a helpful assistant`,
     messages: [
       ...aiState.get().messages.map((message: any) => ({
         role: message.role,
