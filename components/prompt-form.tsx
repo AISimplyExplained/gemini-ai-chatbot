@@ -1,3 +1,4 @@
+"use client"
 import { useModel } from '@/app/context/ModelContext'
 import { Faq } from '@/components/faq'
 import { Button } from '@/components/ui/button'
@@ -22,14 +23,20 @@ import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 import { toast } from 'sonner'
 import { UserMessage } from './stocks/message'
+import { Session } from '@/lib/types'
+
 
 export function PromptForm({
   input,
-  setInput
+  setInput,
+  session
 }: {
   input: string
   setInput: (value: string) => void
+  session?: Session
+
 }) {
+  console.log(session)
   const { formRef, onKeyDown } = useEnterSubmit()
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
   const { submitUserMessage } = useActions()
@@ -184,6 +191,7 @@ export function PromptForm({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
+    if(!session) return toast.error('You need to login first')
     if (window.innerWidth < 600) {
       e.currentTarget['message']?.blur()
     }

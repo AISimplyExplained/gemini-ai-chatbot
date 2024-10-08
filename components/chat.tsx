@@ -78,6 +78,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
             setInput={setInput}
             isAtBottom={isAtBottom}
             scrollToBottom={scrollToBottom}
+            session={session}
         />
       </div>
   )
