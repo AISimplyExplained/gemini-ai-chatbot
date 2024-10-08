@@ -309,6 +309,7 @@ async function submitUserMessage(
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
   })
   // List of Groq models
+  const isSimpleModel = ['o1-preview', 'o1-mini'].includes(model);
   const groqModels = ['llama3-70b-8192', 'gemma-7b-it', 'mixtral-8x7b-32768']
   // Determine the API based on the model name
   const isGeminiModel = model === 'gemini'
@@ -378,7 +379,7 @@ async function submitUserMessage(
   const result = await streamUI({
     model: api(model),
     initial: <SpinnerMessage />,
-    system: ['o1-preview', 'o1-mini'].includes(model) ? undefined : `You are a helpful assistant`,
+    system: isSimpleModel ? undefined : `You are a helpful assistant`,
     messages: [
       ...aiState.get().messages.map((message: any) => ({
         role: message.role,
@@ -411,7 +412,7 @@ async function submitUserMessage(
 
       return textNode
     },
-    tools: {
+    tools: isSimpleModel ? undefined :  {
       searchWeb: tool({
         description: 'A tool for performing web searches.',
         parameters: z.object({ query: z.string().describe('The query for web search') }),
