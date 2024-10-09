@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useModel } from '@/app/context/ModelContext'
 import { Faq } from '@/components/faq'
 import { Button } from '@/components/ui/button'
@@ -22,9 +22,8 @@ import { nanoid } from 'nanoid'
 import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 import { toast } from 'sonner'
-import { UserMessage } from './stocks/message'
+import { BotMessage, UserMessage } from './stocks/message'
 import { Session } from '@/lib/types'
-
 
 export function PromptForm({
   input,
@@ -34,7 +33,6 @@ export function PromptForm({
   input: string
   setInput: (value: string) => void
   session?: Session
-
 }) {
   console.log(session)
   const { formRef, onKeyDown } = useEnterSubmit()
@@ -172,6 +170,32 @@ export function PromptForm({
     setIsUploading(false)
   }
 
+  const latestModel = async (input: string) => {
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: input, model: model })
+      })
+      if (!res.ok) {
+        throw new Error('Error fetching response')
+      }
+      const data = await res.json()
+      setMessages(currentMessages => [
+        ...currentMessages,
+        {
+          id: nanoid(),
+          display: <BotMessage content={data.res} />
+        }
+      ])
+      console.log('Data', data.res)
+    } catch (error) {
+      console.error('Error:', error)
+    }
+  }
+
   const compressImage = async (file: File) => {
     const options = {
       maxSizeMB: 0.5, // Compress to a smaller size if necessary
@@ -191,7 +215,7 @@ export function PromptForm({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if(!session) return toast.error('You need to login first')
+    if (!session) return toast.error('You need to login first')
     if (window.innerWidth < 600) {
       e.currentTarget['message']?.blur()
     }
@@ -261,18 +285,23 @@ export function PromptForm({
       // Log the JSON payload
       console.log('Sending JSON payload:', JSON.stringify(payload))
 
-      const responseMessage = await submitUserMessage(
-        value,
-        model,
-        uploadedImages,
-        uploadedPdfFiles,
-        uploadingCSVFiles
-      )
-      console.log(uploadingCSVFiles)
-      setUploadedImages([])
-      setUploadedPdfFiles([])
-      setUploadingCSVFiles([])
-      setMessages(currentMessages => [...currentMessages, responseMessage])
+      if (model === 'o1-preview' || model === 'o1-mini') {
+        await latestModel(value)
+        return
+      } else {
+        const responseMessage = await submitUserMessage(
+          value,
+          model,
+          uploadedImages,
+          uploadedPdfFiles,
+          uploadingCSVFiles
+        )
+        setMessages(currentMessages => [...currentMessages, responseMessage])
+        console.log(uploadingCSVFiles)
+        setUploadedImages([])
+        setUploadedPdfFiles([])
+        setUploadingCSVFiles([])
+      }
     } catch (error) {
       console.error('Error submitting message:', error)
       toast(
@@ -295,9 +324,7 @@ export function PromptForm({
   const canUploadAttachments = [
     'gpt-4',
     'gpt-4-turbo',
-    'gpt-4o-2024-05-13',
-    'o1-preview	',
-    'o1-mini'
+    'gpt-4o-2024-05-13'
   ].includes(model)
 
   return (
