@@ -373,6 +373,8 @@ async function submitUserMessage(
     ]
   })
 
+
+
   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>
   let textNode: undefined | React.ReactNode
 
